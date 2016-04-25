@@ -1,4 +1,5 @@
 <?php
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -13,14 +14,22 @@ if ($mysqli->connect_errno) {
 // END SQL CONNECTION  //
 
 //    TESTING LOOP //
-$pageID = '30976';
-for ($y = 0; $y < 10;) {
-
+//30970 - 309790
+//31090 - 31190
+//31190 - 31257 && 31259 - 31300
+//31300 - 31500
+$pageID = '31500';
+for ($y = 0; $y < 500;) {
+//31258 causes error: 1. different genral stats count 2. no table
 $html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$pageID.'/year/2016');
-//$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/30981/corey-kluber');
-//Test to see if page is default
+
+//Test to see if page is the standard pitcher page
 $generalStats = $html->find('ul.general-info li');
 if ($generalStats != NULL) {
+  $pos_num = $generalStats[0];
+  preg_match('~>(.*?)<~', $pos_num, $output);
+  $position = substr($output[1], -2);
+  if ($position == 'SP' || $position == 'RP') {
 
 //Grab General Stats of Player
 $generalStats = NULL;
@@ -33,9 +42,6 @@ $generalStats = $html->find('ul.general-info li');
 $pos_num = $generalStats[0];
 preg_match('~>(.*?)<~', $pos_num, $output);
 $position = substr($output[1], -2);
-if ($position != 'SP' && $position != 'RP') {
-  echo "Player found is not a pitcher!!!";
-}
 $number   = substr($output[1], 1, 2);
 
 $throw_bat = $generalStats[1];
@@ -86,7 +92,6 @@ echo "Inserted new record ".$sql1."<br>";
 //Grab Field Stats of Player
 $table = array();
 $table = $html->find('table',1);
-
 $sql3 = "INSERT INTO `pitcher_stats`(`player_id`,`game_date`, `opponent`, `win_result`, `score_result`, `innings_pitched`,
   `hits`, `runs`, `earned_runs`, `home_runs`, `walks`, `strikeouts`, `ground_balls`, `fly_balls`, `pitches`,
   `batters_faced`, `game_score`) VALUES ";
@@ -129,7 +134,8 @@ foreach(($table->find('tr')) as $row) {
             $sql3 .= ",'".trim(substr($cellData, -3))."'";
             //for column 3 echo win or loss as boolean and echo score as seperate column
           } elseif ($cellCounter == 2) {
-            if (substr($cellData,0,-1) == "W") {
+            preg_match('~>(.*?)<~', $cellData, $output);
+            if ($output[0] == "W") {
               $sql3 .= ",'1',";
             } else {
               $sql3 .= ",'0',";
@@ -162,10 +168,11 @@ while ($row = $res->fetch_assoc()) {
   $gameDate = $row['max_game_date'];
 }
 if ($gameDate == NULL) {
-$res = $mysqli->query($sql3);
-echo "Inserted new record.<br>";
-} else {
-  echo "No new records to be added.<br>";
+  $res = $mysqli->query($sql3);
+  echo "Inserted new record<br>";
+  } else {
+  echo "Already exists in the database.<br>";
+}
 }
 }
 $y++;

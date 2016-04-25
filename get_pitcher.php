@@ -14,7 +14,7 @@ if ($mysqli->connect_errno) {
 
 //    TESTING LOOP //
 $pageID = '30976';
-for ($y = 0; $y < 2;) {
+for ($y = 0; $y < 10;) {
 
 $html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$pageID.'/year/2016');
 //$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/30981/corey-kluber');
@@ -162,10 +162,10 @@ while ($row = $res->fetch_assoc()) {
   $gameDate = $row['max_game_date'];
 }
 if ($gameDate == NULL) {
-//////////$res = $mysqli->query($sql3);
-  echo "Inserted new record".$name."<br>";
-  } else {
-    echo "No new records to be added.".$name."<br>";
+$res = $mysqli->query($sql3);
+echo "Inserted new record.<br>";
+} else {
+  echo "No new records to be added.<br>";
 }
 }
 $y++;

@@ -13,15 +13,19 @@ if ($mysqli->connect_errno) {
 }
 // END SQL CONNECTION  //
 
-//    TESTING LOOP //
+// BACKUP LOOP //
 //30970 - 309790
 //31090 - 31190
 //31190 - 31257 && 31259 - 31300
 //31300 - 31500
-$pageID = '31500';
-for ($y = 0; $y < 500;) {
-//31258 causes error: 1. different genral stats count 2. no table
+/////////////////
+// NEW LOOP   //
+//30000 - 30392
+$pageID = '30394';
+for ($y = 0; $y < 1000;) {
 $html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$pageID.'/year/2016');
+//$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/30393/year/2016');
+
 
 //Test to see if page is the standard pitcher page
 $generalStats = $html->find('ul.general-info li');
@@ -51,7 +55,7 @@ preg_match('~Bats: (.*?)<~', $throw_bat, $output3);
 $bat = $output3[1];
 
 $teamArray = $generalStats[2];
-preg_match('~<a(.*?)/a~', $teamArray, $output4);
+preg_match('~<a(.*?)/a>~', $teamArray, $output4);
 $input = $output4[1];
 preg_match('~>(.*?)<~', $input, $output5);
 $team = $output5[1];
@@ -64,9 +68,19 @@ $date = str_replace(',', '', $date);
 //$date = str_replace(' ', '-', $date);
 $date =  date('Y/m/d', strtotime($date));
 
-$ht_wt = $generalStats2[4];
-preg_match('~</span>(.*?),~', $ht_wt, $output7);
-$height = $output7[1];
+if (preg_match('~Ht/Wt~', $generalStats2[3])) {
+  $ht_wt = $generalStats2[3];
+  preg_match('~</span>(.*?),~', $ht_wt, $output7);
+  $height = $output7[1];
+  preg_match('~,(.*?)lbs.~', $ht_wt, $output8);
+  $weight = trim($output8[1]);
+} else {
+  $ht_wt = $generalStats2[4];
+  preg_match('~</span>(.*?),~', $ht_wt, $output7);
+  $height = $output7[1];
+  preg_match('~,(.*?)lbs.~', $ht_wt, $output8);
+  $weight = trim($output8[1]);
+}
 
 //Check to see if player is alread in database
 $id = NULL;
@@ -77,7 +91,7 @@ while ($row = $res->fetch_assoc()) {
   $id = $row['player_id'];
 }
 if ($id == NULL) {
-$sql1 = "INSERT INTO players (`player_name`, `position`, `number`, `team`, `throw`, `bat`, `height`, `birth_date`) VALUES ('$name','$position','$number','$team','$throw','$bat','$height','$date')";
+$sql1 = "INSERT INTO players (`player_name`, `position`, `number`, `team`, `throw`, `bat`, `height`,`weight`,`birth_date`,`added_on`) VALUES ('$name','$position','$number','$team','$throw','$bat','$height','$weight','$date',curdate())";
 $res = $mysqli->query($sql1);
 
 $sql0 = "SELECT player_id FROM players WHERE player_name = '$name' AND position = '$position'";
@@ -92,9 +106,10 @@ echo "Inserted new record ".$sql1."<br>";
 //Grab Field Stats of Player
 $table = array();
 $table = $html->find('table',1);
+if ($table != NULL) {
 $sql3 = "INSERT INTO `pitcher_stats`(`player_id`,`game_date`, `opponent`, `win_result`, `score_result`, `innings_pitched`,
   `hits`, `runs`, `earned_runs`, `home_runs`, `walks`, `strikeouts`, `ground_balls`, `fly_balls`, `pitches`,
-  `batters_faced`, `game_score`) VALUES ";
+  `batters_faced`, `game_score`, `added_on`) VALUES ";
 
 //Build table from from table
 $headData     = array();
@@ -110,7 +125,7 @@ foreach(($table->find('tr')) as $row) {
         $cellData = $cell->innertext;
         //End the table loop once end is reached, determined by the cell "Totals"
         if ($cellData == "Totals") {
-          $sql3 .= ")";
+          $sql3 .= ",curdate())";
           break 2;
         }
         //Skip the two header columns following the Regular header and Monthly header
@@ -125,7 +140,7 @@ foreach(($table->find('tr')) as $row) {
             $cellData .= " 2016";
             $date =  date('Y/m/d', strtotime($cellData));
             if ($rowCounter != 3) {
-              $sql3 .= "),('".$id."','".$date."'";
+              $sql3 .= ",curdate()),('".$id."','".$date."'";
             } else {
               $sql3 .= "('".$id."','".$date."'";
             }
@@ -135,7 +150,7 @@ foreach(($table->find('tr')) as $row) {
             //for column 3 echo win or loss as boolean and echo score as seperate column
           } elseif ($cellCounter == 2) {
             preg_match('~>(.*?)<~', $cellData, $output);
-            if ($output[0] == "W") {
+            if ($output[1] == "W") {
               $sql3 .= ",'1',";
             } else {
               $sql3 .= ",'0',";
@@ -175,7 +190,9 @@ if ($gameDate == NULL) {
 }
 }
 }
+}
 $y++;
 $pageID++;
 }
+
 ?>

@@ -1,3 +1,5 @@
+http://espn.go.com/search/results?q=max%20scherzer
+
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);

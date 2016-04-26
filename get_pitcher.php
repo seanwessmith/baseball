@@ -27,8 +27,12 @@ if ($mysqli->connect_errno) {
 //33319 - 33670
 //33670 - 34863
 //34863 - 35000
+//30000 - 29630
+//29630 - 29323
+//29323 - 29081
+
 ////////////////
-$pageID = '30000';
+$pageID = '29081';
 for ($y = 0; $y < 10000;) {
 //Reset PHP script processing time
 set_time_limit(0);

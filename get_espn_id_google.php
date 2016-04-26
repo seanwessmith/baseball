@@ -35,7 +35,7 @@ $encodedPlayer = urlencode($unmatchedPlayer);
 $hrefPlayer = strtolower(str_replace(' ', '\-', $unmatchedPlayer));
 
 //Grab HTML page used to grep ESPN number
-$html = file_get_html('https://www.google.com/search?safe=off&site=&source=hp&q='.$encodedPlayer.'+espn');
+$html = file_get_html('https://www.google.com/search?safe=off&site=&source=hp&q='.$encodedPlayer.'+espn+mlb');
 
 //Test to see if page has player name; if so echo ESPN number.
 $bigDivs = $html->find('h3.r');

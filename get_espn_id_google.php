@@ -12,8 +12,7 @@ if ($mysqli->connect_errno) {
 
 
 //Grab record count
-$sql0 = "SELECT count(*) AS rec_count FROM (SELECT a.* FROM baseball_1461521597 a LEFT JOIN players b on a.name = b.player_name
-         WHERE b.player_name IS NULL AND a.position like '%P%') a";
+$sql0 = "SELECT count(*) AS rec_count FROM (SELECT * FROM players WHERE espn_id = 0) a";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
@@ -23,12 +22,12 @@ $rec_count = $row['rec_count'];
 //Grab one unmatched player
 $step = 0;
 for ($y = 0; $y < $rec_count;) {
-$sql1 = "SELECT a.* FROM baseball_1461521597 a LEFT JOIN players b on a.name = b.player_name
-         WHERE b.player_name IS NULL AND a.position like '%P%' LIMIT $step,1";
+$sql1 = "SELECT player_name, player_id FROM players WHERE espn_id = 0 LIMIT 1";
 $res = $mysqli->query($sql1);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
-  $unmatchedPlayer = $row['name'];
+  $unmatchedPlayer = $row['player_name'];
+  $playerID        = $row['player_id'];
 }
 
 //Get player name ready for URL
@@ -45,14 +44,15 @@ foreach($bigDivs as $div) {
     $href = $link[0]->href;
     $pattern = '#(?<=id/)[^/'.$hrefPlayer.']+#';
     preg_match($pattern,$href, $espnID);
+    echo $espnID[0];
     if ($espnID[0] !== NULL){
       //Insert Player Name and ESPN ID into players table
-      $sql0 = "INSERT INTO `players`(`espn_id`, `player_name`,`added_on`) VALUES ('$espnID[0]','$unmatchedPlayer',curdate())";
+      $sql0 = "UPDATE `players` SET `espn_id`= '$espnID[0]', `changed_on`= curdate() WHERE player_id = $playerID";
+      echo $sql0;
       $mysqli->query($sql0);
       break;
     }
 }
-$step++;
 $y++;
 }
 ?>

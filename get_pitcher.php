@@ -30,9 +30,11 @@ if ($mysqli->connect_errno) {
 //30000 - 29630
 //29630 - 29323
 //29323 - 29081
-
+//29081 - 28655
+//28655 - 28065
+//28065 - 28466
 ////////////////
-$pageID = '29081';
+$pageID = '28466';
 for ($y = 0; $y < 10000;) {
 //Reset PHP script processing time
 set_time_limit(0);
@@ -147,9 +149,6 @@ foreach(($table->find('tr')) as $row) {
           $skipNextRow = 1;
         }
         if ($skipNextRow == 0) {
-          //echo $counter." ".$cellData;
-
-        //for column 2 select right 3 or right 2 characters
           if ($cellCounter == 0) {
             $cellData .= " 2016";
             $date =  date('Y/m/d', strtotime($cellData));
@@ -161,7 +160,6 @@ foreach(($table->find('tr')) as $row) {
             $newRow = 0;
           } elseif ($cellCounter == 1) {
             $sql3 .= ",'".trim(substr($cellData, -3))."'";
-            //for column 3 echo win or loss as boolean and echo score as seperate column
           } elseif ($cellCounter == 2) {
             preg_match('~>(.*?)<~', $cellData, $output);
             if ($output[1] == "W") {

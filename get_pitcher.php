@@ -35,66 +35,109 @@ if ($mysqli->connect_errno) {
 //28065 - 28466
 ////////////////
 $pageID = '28466';
-for ($y = 0; $y < 10000;) {
-//Reset PHP script processing time
+for ($y = 0; $y < 1;) {
+echo "test";
+//Reset PHP script processing time to prevent script ending after 30 seconds
 set_time_limit(0);
-$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$pageID.'/year/2016');
-//$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/30393/year/2016');
-
-
-//Test to see if page is the standard pitcher page
+$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/30371/year/2016');
+///////////////////////////////////////////////////////////////////////////
+//Test to see if page is the standard format needed to grab relevant info//
 $generalStats = $html->find('ul.general-info li');
 if ($generalStats != NULL) {
   $pos_num = $generalStats[0];
   preg_match('~>(.*?)<~', $pos_num, $output);
   $position = substr($output[1], -2);
+
   if ($position == 'SP' || $position == 'RP') {
+  //Grab General Stats of Player
+  $generalStats = NULL;
+  $generalStats = $html->find('h1');
+  $name = $generalStats[0];
+  preg_match('~>(.*?)<~', $name, $output);
+  $name = str_replace('\'', '\\\'', $output[1]);
 
-//Grab General Stats of Player
-$generalStats = NULL;
-$generalStats = $html->find('h1');
-$name = $generalStats[0];
-preg_match('~>(.*?)<~', $name, $output);
-$name = str_replace('\'', '\\\'', $output[1]);
+  $generalStats = $html->find('ul.general-info li');
+  $pos_num = $generalStats[0];
+  preg_match('~>(.*?)<~', $pos_num, $output);
+  $position = substr($output[1], -2);
+  $number   = substr($output[1], 1, 2);
 
-$generalStats = $html->find('ul.general-info li');
-$pos_num = $generalStats[0];
-preg_match('~>(.*?)<~', $pos_num, $output);
-$position = substr($output[1], -2);
-$number   = substr($output[1], 1, 2);
+  $throw_bat = $generalStats[1];
+  preg_match('~Throws: (.*?),~', $throw_bat, $output2);
+  $throw = $output2[1];
+  preg_match('~Bats: (.*?)<~', $throw_bat, $output3);
+  $bat = $output3[1];
 
-$throw_bat = $generalStats[1];
-preg_match('~Throws: (.*?),~', $throw_bat, $output2);
-$throw = $output2[1];
-preg_match('~Bats: (.*?)<~', $throw_bat, $output3);
-$bat = $output3[1];
+  $teamArray = $generalStats[2];
+  preg_match('~<a(.*?)/a>~', $teamArray, $output4);
+  $input = $output4[1];
+  preg_match('~>(.*?)<~', $input, $output5);
+  $team = $output5[1];
 
-$teamArray = $generalStats[2];
-preg_match('~<a(.*?)/a>~', $teamArray, $output4);
-$input = $output4[1];
-preg_match('~>(.*?)<~', $input, $output5);
-$team = $output5[1];
+  $generalStats2 = $html->find('ul.player-metadata li');
+  $birthDate = $generalStats2[0];
+  preg_match('~<span>Birth Date</span>(.*?) \(Age~', $birthDate, $output6);
+  $date = $output6[1];
+  $date = str_replace(',', '', $date);
+  //$date = str_replace(' ', '-', $date);
+  $date =  date('Y/m/d', strtotime($date));
 
-$generalStats2 = $html->find('ul.player-metadata li');
-$birthDate = $generalStats2[0];
-preg_match('~<span>Birth Date</span>(.*?) \(Age~', $birthDate, $output6);
-$date = $output6[1];
-$date = str_replace(',', '', $date);
-//$date = str_replace(' ', '-', $date);
-$date =  date('Y/m/d', strtotime($date));
+  if (preg_match('~Ht/Wt~', $generalStats2[3])) {
+    $ht_wt = $generalStats2[3];
+    preg_match('~</span>(.*?),~', $ht_wt, $output7);
+    $height = $output7[1];
+    preg_match('~,(.*?)lbs.~', $ht_wt, $output8);
+    $weight = trim($output8[1]);
+  } else {
+    $ht_wt = $generalStats2[4];
+    preg_match('~</span>(.*?),~', $ht_wt, $output7);
+    $height = $output7[1];
+    preg_match('~,(.*?)lbs.~', $ht_wt, $output8);
+    $weight = trim($output8[1]);
+  }
+}
+}
+/////////////////////////////////////////////////////////////////////////
+//Test to see if page is the second format needed to grab relevant info//
+if ($generalStats == NULL) {
+  $generalStats = $html->find('ul.player-metadata li');
+  //End this page if not one of the two defaults
+  if ($generalStats == NULL) {
+    break 2;
+  }
+  $pos_num = $generalStats[4];
+  preg_match('~\/span>(.*?)<\/li~', $pos_num, $output);
+  $position = $output[1];
+  if ($position == "Starting Pitcher") {
+    $position = "SP";
+  }
+  if ($position == "Relief Pitcher") {
+    $position = "RP";
+  }
 
-if (preg_match('~Ht/Wt~', $generalStats2[3])) {
-  $ht_wt = $generalStats2[3];
-  preg_match('~</span>(.*?),~', $ht_wt, $output7);
-  $height = $output7[1];
-  preg_match('~,(.*?)lbs.~', $ht_wt, $output8);
-  $weight = trim($output8[1]);
-} else {
-  $ht_wt = $generalStats2[4];
-  preg_match('~</span>(.*?),~', $ht_wt, $output7);
-  $height = $output7[1];
-  preg_match('~,(.*?)lbs.~', $ht_wt, $output8);
-  $weight = trim($output8[1]);
+  if ($position == 'SP' || $position == 'RP') {
+  $generalStats = $html->find('h1');
+  $name = $generalStats[0];
+  preg_match('~>(.*?)<~', $name, $output);
+  $name = str_replace('\'', '\\\'', $output[1]);
+
+  $generalStats = $html->find('ul.player-metadata li');
+  $birthDate = $generalStats[0];
+  echo htmlspecialchars($birthDate);
+  preg_match('~\/span>(.*?)<\/li~', $birthDate, $output6);
+  $date = $output6[1];
+  $date = str_replace(',', '', $date);
+  //$date = str_replace(' ', '-', $date);
+  $date =  date('Y/m/d', strtotime($date));
+
+  //Set defaults for incomplete data
+  $number = 0;
+  $team   = NULL;
+  $throw  = NULL;
+  $bat    = NULL;
+  $height = NULL;
+  $weight = NULL;
+}
 }
 
 //Check to see if player is alread in database
@@ -199,8 +242,6 @@ if ($gameDate == NULL) {
   echo $pageID." ".time()." Inserted new record<br>";
   } else {
   echo time()." Already exists in the database.<br>";
-}
-}
 }
 }
 $y++;

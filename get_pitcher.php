@@ -3,7 +3,6 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
 require('simple_html_dom.php');
 
 //CONNECT TO SQL        //
@@ -21,8 +20,20 @@ if ($mysqli->connect_errno) {
 /////////////////
 // NEW LOOP   //
 //30000 - 30392
-$pageID = '30394';
-for ($y = 0; $y < 1000;) {
+//30394 - 30820
+//30820 - 30920
+//30820 - 31105
+//31106 - 31290
+//31290 - 31762
+//31762 - 32302
+//3202  - 32328 //Added set_time_limit()
+//32329 - 32826
+//32826 - 32985
+//32985 - 33319
+$pageID = '33319';
+for ($y = 0; $y < 10000;) {
+//Reset PHP script processing time
+set_time_limit(0);
 $html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$pageID.'/year/2016');
 //$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/30393/year/2016');
 
@@ -184,9 +195,9 @@ while ($row = $res->fetch_assoc()) {
 }
 if ($gameDate == NULL) {
   $res = $mysqli->query($sql3);
-  echo "Inserted new record<br>";
+  echo time()." Inserted new record<br>";
   } else {
-  echo "Already exists in the database.<br>";
+  echo time()." Already exists in the database.<br>";
 }
 }
 }

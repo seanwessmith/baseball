@@ -1,4 +1,13 @@
-What is done:
+How to Run:
+
+index.php - Shows the best team given the salary cap
+
+p_fetch   - fetches new players from ESPN's website
+p_update  - updates players already in the players database
+p_unknown - fetches the ESPN_ID of a player from the DraftKings CSV sheet
+
+
+Accomplishments:
 
 1. Currently have all pitchers in database that are included in DraftKings CSV sheet.
 
@@ -8,12 +17,9 @@ What is done:
 
 4. Can run index.php to build the best team given a given salary and player points. Need to improve how players are rated, "The Master Algorithm".
 
-        ---- TEMP GOALS -----
-        A. Update new players
-          I. Update where not equal to player_id and game_date
-          II. Save cell data into array, then insert where date not in database
-
 ------------------------------------------------------------------------------------------------------------------------------------------------
+Future Additions:
+
 1. Upload to AWS
 
 2. Add cron job to refresh database from this link, needs to reference a schedule so it refreshes only updated teams.

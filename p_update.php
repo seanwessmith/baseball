@@ -27,6 +27,7 @@ $rec_count = $row['rec_count'];
 $step        = 0;
 $updateCount = 0;
 $newRecords  = 0;
+$noTable     = 0;
 $noTablePlayer = array();
 for ($y = 0; $y < $rec_count;) {
 //Reset PHP script processing time to prevent script ending after 30 seconds//
@@ -258,7 +259,6 @@ if ($runSQL == 1) {
 $sql5 = "UPDATE players SET `refreshed_on` = curdate() WHERE `player_id` = $playerID ";
 $res = $mysqli->query($sql5);
 $updateCount++;
-echo "Loop time: ".time();
 $y++;
 $step++;
 }
@@ -266,6 +266,6 @@ $totalTime = $startTime - time();
 echo "Total Time Taken: ".$totalTime;
 echo "<br> Total Players updated: ".$updateCount;
 echo "<br> Total Players with new records: ".$newRecords;
-echo "<br> Number of players that haven't played in 2016: ".$noTablePlayer."<br><br>";
+echo "<br> Number of players that haven't played in 2016: ".$noTable."<br><br>";
 print_r($noTablePlayer);
 ?>

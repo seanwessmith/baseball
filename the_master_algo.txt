@@ -1,0 +1,7 @@
+The Master Algorithm- Insights
+------------------------------------------
+1.  Run algo to determine best team/ best players
+	a. Add twitter data from team fans, players, coaches.
+	b. Add weather data
+
+2. Explore what are conjunctive concepts.

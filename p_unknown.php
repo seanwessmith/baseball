@@ -10,7 +10,6 @@ if ($mysqli->connect_errno) {
 }
 //END SQL CONNECTION   //
 
-
 //Grab record count
 $sql0 = "SELECT count(*) AS rec_count FROM (SELECT a.* FROM baseball_1461521597 a LEFT JOIN players b on a.name = b.player_name
          WHERE b.player_name IS NULL AND a.position like '%P%') a";

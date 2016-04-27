@@ -1,39 +1,50 @@
 <?php
-
+ini_set( 'default_socket_timeout', 120 );
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 require('simple_html_dom.php');
 
-//CONNECT TO SQL        //
+////CONNECT TO SQL        ////
 $mysqli = new mysqli("localhost", "root", "root", "dkings");
 if ($mysqli->connect_errno) {
     echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
 }
-// END SQL CONNECTION  //
+//// END SQL CONNECTION  ////
+$startTime = time();
+echo "Start time: ".$startTime."<br>";
+////INPUT: SELECT statement that selects players needing updating////
+$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY player_id DESC";
+/////////////////////////////////////////////////////////////////////
 
 //Grab record count
-$sql0 = "SELECT count(*) AS rec_count FROM (SELECT * FROM players WHERE position NOT IN ('SP','RP')) a";
+$sql0 = "SELECT count(*) AS rec_count FROM ($sqlSelect) a";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
 $rec_count = $row['rec_count'];
 }
-$step = 0;
-for ($y = 0; $y < 1;) {
-//Reset PHP script processing time to prevent script ending after 30 seconds
+$step        = 0;
+$updateCount = 0;
+$newRecords  = 0;
+$noTablePlayer = array();
+for ($y = 0; $y < $rec_count;) {
+//Reset PHP script processing time to prevent script ending after 30 seconds//
 set_time_limit(0);
+//////////////////////////////////////////////////////////////////////////////
 
-$sql0 = "SELECT * FROM players WHERE position NOT IN ('SP','RP') ORDER BY player_id DESC LIMIT 0,1";
+//Select one player that needs updating
+$sql0 = $sqlSelect." LIMIT 0,1";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
 $espnID     = $row['espn_id'];
 $playerID = $row['player_id'];
 }
-echo $playerID;
+
 $html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$espnID.'/year/2016');
 
+/*     THIS UPDATES PLAYERS STATIC INFO
 //Test to see if page is the standard format needed to grab relevant info//
 $name     = NULL;
 $position = NULL;
@@ -142,10 +153,10 @@ if ($generalStats != NULL) {
 if ($name != NULL && $date !== NULL) {
 
 $sql1 = "UPDATE players SET `espn_id` = '$espnID',`player_name` = '$name', `position` = '$position', `number` = '$number', `team` = '$team', `throw` = '$throw', `bat` = '$bat', `height` = '$height',
-                              `weight` = '$weight',`birth_date` = '$date',`added_on` = curdate() WHERE player_id = $playerID";
+                              `weight` = '$weight',`birth_date` = '$date',`changed_on` = curdate() WHERE player_id = $playerID";
 echo $sql1."<br>";
 $res = $mysqli->query($sql1);
-
+*/
 //Grab Field Stats of Player
 $table = array();
 $table = $html->find('table',1);
@@ -165,7 +176,6 @@ $runSQL       = 0;
 $cellSQL      = NULL;
 foreach(($table->find('tr')) as $row) {
   $rowCounter++;
-  $newRow = 1;
     $rowData = array();
     foreach($row->find('td') as $cell) {
         $cellData = $cell->innertext;
@@ -179,6 +189,8 @@ foreach(($table->find('tr')) as $row) {
         }
         if ($skipNextRow == 0) {
           if ($cellCounter == 0) {
+            //echo "<br>Cell Counter: ".$cellCounter."<br>";
+            //echo "Row Counter: ".$rowCounter."<br>";
             $cellData .= " 2016";
             $date =  date('Y/m/d', strtotime($cellData));
             if ($rowCounter == 3) {
@@ -186,7 +198,6 @@ foreach(($table->find('tr')) as $row) {
             } else {
               $cellSQL .= ",('".$playerID."','".$date."'";
             }
-            $newRow = 0;
           } elseif ($cellCounter == 1) {
             $cellSQL .= ",'".trim(substr($cellData, -3))."'";
           } elseif ($cellCounter == 2) {
@@ -205,41 +216,56 @@ foreach(($table->find('tr')) as $row) {
             $cellSQL .= ",'".$cellData."',curdate())";
           }else {
             $cellSQL .= ",'".$cellData."'";
-            $newRow = 0;
-            $runSQL = 1;
           }
         }
         $cellCounter++;
       }
-      if ($skipNextRow == 1) {
-        $skipNextRow = 2;
-      } else {
-        $skipNextRow = 0;
-      }
     $cellCounter = 0;
     //See if this players game has already been recorded in pitcher_stats
     $sql4 = "SELECT count(*) as p_count FROM pitcher_stats WHERE player_id = '$playerID' AND game_date = '$date'";
-    if ($date !== 0) {
+    if ($date !== 0 && $skipNextRow == 0) {
+      //echo "<br>sql4: ".$sql4;
+      //echo "<br>date: ".$date."<br>";
       $res = $mysqli->query($sql4);
       $res->data_seek(0);
       while ($row = $res->fetch_assoc()) {
         $pCount = $row['p_count'];
       }
+      //echo "# Records in DB :".$pCount."<br>";
       if ($pCount == 0) {
         $sql3 .= $cellSQL;
+        $runSQL = 1;
         $cellSQL = NULL;
       }
     }
+    //Used to skip the two header rows
+    if ($skipNextRow == 1) {
+      $skipNextRow = 2;
+    } else {
+      $skipNextRow = 0;
+    }
+}
+} else {
+  $noTable++;
+  $noTablePlayer[] = $playerID;
 }
 //Input new game stats into pitcher_stats table
-if ($runSQL = 1) {
-echo "<br>".$sql3;
-$res = $mysqli->query($sql3);
+if ($runSQL == 1) {
+  $res = $mysqli->query($sql3);
+  $newRecords++;
 }
-}
-}
+//Set refrehsed_on date for the newlyupdated player
+$sql5 = "UPDATE players SET `refreshed_on` = curdate() WHERE `player_id` = $playerID ";
+$res = $mysqli->query($sql5);
+$updateCount++;
+echo "Loop time: ".time();
 $y++;
 $step++;
 }
-
+$totalTime = $startTime - time();
+echo "Total Time Taken: ".$totalTime;
+echo "<br> Total Players updated: ".$updateCount;
+echo "<br> Total Players with new records: ".$newRecords;
+echo "<br> Number of players that haven't played in 2016: ".$noTablePlayer."<br><br>";
+print_r($noTablePlayer);
 ?>

@@ -23,24 +23,24 @@
 </head>
 <body>
 
-<!-- Make a connection to localhost DKings Database-->
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
+////CONNECT TO SQL        ////
 $mysqli = new mysqli("localhost", "root", "root", "dkings");
 if ($mysqli->connect_errno) {
     echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
 }
+//// END SQL CONNECTION  ////
 
 ////Build new table and view from CSV URL////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9576";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9615";
 ///////////////////////////////////////////////
 
-$file = file_get_contents('https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9523');
+$file = file_get_contents($csvLink);
 file_put_contents('DKSalaries.csv', $file);
 $viewName = NULL;
 $csv_link = NULL;
@@ -49,10 +49,10 @@ $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
   $viewName = $row['table_name']."_view";
-	$csv_link = $row['csv_link'];
+	$oldCSVLink = $row['csv_link'];
 }
 
-if ($csv_link != $csvLink) {
+if ($oldCSVLink != $csvLink) {
 
 $tableName = "baseball_".strtotime("now");
 
@@ -90,13 +90,8 @@ $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
   $viewName = $row['table_name']."_view";
 }
-
-echo "<br><br><br><br> Created New Table <br>";
 }
-////END of building new table and view////
 ?>
-
-<!-- Connection completed -->
 
 <!-- Navigation Bar -->
 <div class="full bg"></div>

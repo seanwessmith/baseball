@@ -8,9 +8,13 @@ What is done:
 
 4. Can run index.php to build the best team given a given salary and player points. Need to improve how players are rated, "The Master Algorithm".
 
+        ---- TEMP GOALS -----
+        A. Update new players
+          I. Update where not equal to player_id and game_date
+          II. Save cell data into array, then insert where date not in database
 
 ------------------------------------------------------------------------------------------------------------------------------------------------
 1. Upload to AWS
 
 2. Add cron job to refresh database from this link, needs to reference a schedule so it refreshes only updated teams.
-https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=21&draftGroupId=8129
+   https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=21&draftGroupId=8129

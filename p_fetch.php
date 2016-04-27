@@ -36,10 +36,9 @@ if ($mysqli->connect_errno) {
 ////////////////
 $pageID = '28466';
 for ($y = 0; $y < 1;) {
-echo "test";
 //Reset PHP script processing time to prevent script ending after 30 seconds
 set_time_limit(0);
-$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/30371/year/2016');
+$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/5203/year/2016');
 ///////////////////////////////////////////////////////////////////////////
 //Test to see if page is the standard format needed to grab relevant info//
 $generalStats = $html->find('ul.general-info li');
@@ -123,7 +122,6 @@ if ($generalStats == NULL) {
 
   $generalStats = $html->find('ul.player-metadata li');
   $birthDate = $generalStats[0];
-  echo htmlspecialchars($birthDate);
   preg_match('~\/span>(.*?)<\/li~', $birthDate, $output6);
   $date = $output6[1];
   $date = str_replace(',', '', $date);
@@ -143,7 +141,6 @@ if ($generalStats == NULL) {
 //Check to see if player is alread in database
 $id = NULL;
 $sql0 = "SELECT player_id FROM players WHERE player_name = '$name' AND position = '$position'";
-echo $pageID." ".$sql0;
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
@@ -151,7 +148,7 @@ while ($row = $res->fetch_assoc()) {
 }
 if ($id == NULL) {
 $sql1 = "INSERT INTO players (`espn_id`,`player_name`, `position`, `number`, `team`, `throw`, `bat`, `height`,`weight`,`birth_date`,`added_on`) VALUES ('$pageID','$name','$position','$number','$team','$throw','$bat','$height','$weight','$date',curdate())";
-$res = $mysqli->query($sql1);
+//$res = $mysqli->query($sql1);
 
 $sql0 = "SELECT player_id FROM players WHERE player_name = '$name' AND position = '$position'";
 $res = $mysqli->query($sql0);
@@ -178,6 +175,7 @@ $cellCounter  = 0;
 $rowCounter   = 0;
 foreach(($table->find('tr')) as $row) {
   $rowCounter++;
+  echo $rowCounter;
   $newRow = 1;
     $rowData = array();
     foreach($row->find('td') as $cell) {
@@ -230,6 +228,7 @@ foreach(($table->find('tr')) as $row) {
     $cellCounter = 0;
 }
 //Input new game stats into pitcher_stats table
+echo "<br>".$sql3;
 $gameDate = NULL;
 $sql5 = "SELECT MAX(game_date) AS max_game_date FROM pitcher_stats WHERE player_id = '$id'";
 $res = $mysqli->query($sql5);
@@ -238,7 +237,7 @@ while ($row = $res->fetch_assoc()) {
   $gameDate = $row['max_game_date'];
 }
 if ($gameDate == NULL) {
-  $res = $mysqli->query($sql3);
+  //$res = $mysqli->query($sql3);
   echo $pageID." ".time()." Inserted new record<br>";
   } else {
   echo time()." Already exists in the database.<br>";

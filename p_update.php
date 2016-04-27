@@ -12,42 +12,35 @@ if ($mysqli->connect_errno) {
 }
 // END SQL CONNECTION  //
 
-// NEW LOOP   //
-//30000 - 30392
-//30394 - 30820
-//30820 - 30920
-//30820 - 31105
-//31106 - 31290
-//31290 - 31762
-//31762 - 32302
-//3202  - 32328
-//32329 - 32826
-//32826 - 32985
-//32985 - 33319
-//33319 - 33670
-//33670 - 34863
-//34863 - 35000
-//30000 - 29630
-//29630 - 29323
-//29323 - 29081
-//29081 - 28655
-//28655 - 28065
-//28065 - 28466
-////////////////
-$pageID = '28466';
-for ($y = 0; $y < 1;) {
-echo "test";
+//Grab record count
+$sql0 = "SELECT count(*) AS rec_count FROM (SELECT * FROM players WHERE position NOT IN ('SP','RP')) a";
+$res = $mysqli->query($sql0);
+$res->data_seek(0);
+while ($row = $res->fetch_assoc()) {
+$rec_count = $row['rec_count'];
+}
+$step = 0;
+for ($y = 0; $y < 1) {
 //Reset PHP script processing time to prevent script ending after 30 seconds
 set_time_limit(0);
-$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/30371/year/2016');
-///////////////////////////////////////////////////////////////////////////
+
+$sql0 = "SELECT * FROM players WHERE position NOT IN ('SP','RP') LIMIT $step,1";
+$res = $mysqli->query($sql0);
+$res->data_seek(0);
+while ($row = $res->fetch_assoc()) {
+$espnID     = $row['espn_id'];
+$playerID = $row['player_id'];
+}
+
+$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$espnID.'/year/2016');
+
 //Test to see if page is the standard format needed to grab relevant info//
 $generalStats = $html->find('ul.general-info li');
 if ($generalStats != NULL) {
   $pos_num = $generalStats[0];
   preg_match('~>(.*?)<~', $pos_num, $output);
   $position = substr($output[1], -2);
-
+  echo $position;
   if ($position == 'SP' || $position == 'RP') {
   //Grab General Stats of Player
   $generalStats = NULL;
@@ -97,7 +90,6 @@ if ($generalStats != NULL) {
   }
 }
 }
-/////////////////////////////////////////////////////////////////////////
 //Test to see if page is the second format needed to grab relevant info//
 if ($generalStats == NULL) {
   $generalStats = $html->find('ul.player-metadata li');
@@ -123,11 +115,9 @@ if ($generalStats == NULL) {
 
   $generalStats = $html->find('ul.player-metadata li');
   $birthDate = $generalStats[0];
-  echo htmlspecialchars($birthDate);
   preg_match('~\/span>(.*?)<\/li~', $birthDate, $output6);
   $date = $output6[1];
   $date = str_replace(',', '', $date);
-  //$date = str_replace(' ', '-', $date);
   $date =  date('Y/m/d', strtotime($date));
 
   //Set defaults for incomplete data
@@ -140,28 +130,11 @@ if ($generalStats == NULL) {
 }
 }
 
-//Check to see if player is alread in database
-$id = NULL;
-$sql0 = "SELECT player_id FROM players WHERE player_name = '$name' AND position = '$position'";
-echo $pageID." ".$sql0;
-$res = $mysqli->query($sql0);
-$res->data_seek(0);
-while ($row = $res->fetch_assoc()) {
-  $id = $row['player_id'];
-}
-if ($id == NULL) {
-$sql1 = "INSERT INTO players (`espn_id`,`player_name`, `position`, `number`, `team`, `throw`, `bat`, `height`,`weight`,`birth_date`,`added_on`) VALUES ('$pageID','$name','$position','$number','$team','$throw','$bat','$height','$weight','$date',curdate())";
+$sql1 = "UPDATE players SET `espn_id` = '$espnID',`player_name` = '$name', `position` = '$position', `number` = '$number', `team` = '$team', `throw` = '$throw', `bat` = '$bat', `height` = '$height',
+                              `weight` = '$weight',`birth_date` = '$date',`added_on` = curdate() WHERE position_id = $playerID";
+echo $sql1."<br>";
 $res = $mysqli->query($sql1);
 
-$sql0 = "SELECT player_id FROM players WHERE player_name = '$name' AND position = '$position'";
-$res = $mysqli->query($sql0);
-$res->data_seek(0);
-while ($row = $res->fetch_assoc()) {
-  $id = $row['player_id'];
-}
-
-echo "Inserted new record ".$sql1."<br>";
-}
 //Grab Field Stats of Player
 $table = array();
 $table = $html->find('table',1);
@@ -176,15 +149,17 @@ $mainTable    = 0;
 $skipNextRow  = 0;
 $cellCounter  = 0;
 $rowCounter   = 0;
+$date         = 0;
+$cellSQL      = NULL;
 foreach(($table->find('tr')) as $row) {
   $rowCounter++;
+  echo "<br>".$rowCounter;
   $newRow = 1;
     $rowData = array();
     foreach($row->find('td') as $cell) {
         $cellData = $cell->innertext;
         //End the table loop once end is reached, determined by the cell "Totals"
         if ($cellData == "Totals") {
-          $sql3 .= ",curdate())";
           break 2;
         }
         //Skip the two header columns following the Regular header and Monthly header
@@ -195,28 +170,30 @@ foreach(($table->find('tr')) as $row) {
           if ($cellCounter == 0) {
             $cellData .= " 2016";
             $date =  date('Y/m/d', strtotime($cellData));
-            if ($rowCounter != 3) {
-              $sql3 .= ",curdate()),('".$id."','".$date."'";
+            if ($rowCounter == 3) {
+              $cellSQL .= "('".$playerID."','".$date."'";
             } else {
-              $sql3 .= "('".$id."','".$date."'";
+              $cellSQL .= ",('".$playerID."','".$date."'";
             }
             $newRow = 0;
           } elseif ($cellCounter == 1) {
-            $sql3 .= ",'".trim(substr($cellData, -3))."'";
+            $cellSQL .= ",'".trim(substr($cellData, -3))."'";
           } elseif ($cellCounter == 2) {
             preg_match('~>(.*?)<~', $cellData, $output);
             if ($output[1] == "W") {
-              $sql3 .= ",'1',";
+              $cellSQL .= ",'1',";
             } else {
-              $sql3 .= ",'0',";
+              $cellSQL .= ",'0',";
             }
             preg_match('~<a(.*?)/a~', $cellData, $output);
             $input2 = $output[1];
             preg_match('~>(.*?)<~', $input2, $output2);
-            $sql3 .= "'".$output2[1]."'";
+            $cellSQL .= "'".$output2[1]."'";
           } elseif ($cellCounter == 15 || $cellCounter == 16 || $cellCounter == 17) {
-          } else {
-            $sql3 .= ",'".$cellData."'";
+          } elseif ($cellCounter == 14) {
+            $cellSQL .= ",'".$cellData."',curdate())";
+          }else {
+            $cellSQL .= ",'".$cellData."'";
             $newRow = 0;
           }
         }
@@ -228,24 +205,24 @@ foreach(($table->find('tr')) as $row) {
         $skipNextRow = 0;
       }
     $cellCounter = 0;
+    //See if this players game has already been recorded in pitcher_stats
+    $sql4 = "SELECT count(*) as p_count FROM pitcher_stats WHERE player_id = '$playerID' AND game_date = '$date'";
+    $res = $mysqli->query($sql4);
+    $res->data_seek(0);
+    while ($row = $res->fetch_assoc()) {
+      $pCount = $row['p_count'];
+    }
+    if ($pCount == 0) {
+      $sql3 .= $cellSQL;
+      $cellSQL = NULL;
+    }
 }
 //Input new game stats into pitcher_stats table
-$gameDate = NULL;
-$sql5 = "SELECT MAX(game_date) AS max_game_date FROM pitcher_stats WHERE player_id = '$id'";
-$res = $mysqli->query($sql5);
-$res->data_seek(0);
-while ($row = $res->fetch_assoc()) {
-  $gameDate = $row['max_game_date'];
-}
-if ($gameDate == NULL) {
-  $res = $mysqli->query($sql3);
-  echo $pageID." ".time()." Inserted new record<br>";
-  } else {
-  echo time()." Already exists in the database.<br>";
-}
+echo "<br>".$sql3;
+$res = $mysqli->query($sql3);
 }
 $y++;
-$pageID--;
+$step++;
 }
 
 ?>

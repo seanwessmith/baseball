@@ -20,6 +20,12 @@ Accomplishments:
 ------------------------------------------------------------------------------------------------------------------------------------------------
 Future Additions:
 
+************IN PROGRESS************
+
+x. index.php Convert MYSQL position into workable variable
+
+***********************************
+
 x. Need to have cron job that runs p_update.php daily
 
 x. Upload to AWS

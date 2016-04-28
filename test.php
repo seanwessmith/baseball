@@ -1,26 +1,12 @@
 <?php
-header('Content-Type: text/event-stream');
-// recommended to prevent caching of event data.
-header('Cache-Control: no-cache');
+class Dog extends Animal {
 
-function send_message($id, $message, $progress) {
-    $d = array('message' => $message , 'progress' => $progress);
+  const CIRCLES_REQUIRED_TO_LIE_DOWN = 3;
 
-    echo "id: $id" . PHP_EOL;
-    echo "data: " . json_encode($d) . PHP_EOL;
-    echo PHP_EOL;
+  private $favoriteFood = 'dirt';
 
-    ob_flush();
-    flush();
+  public function getFavoriteFood() {
+    return $this->favoriteFood;
+  }
 }
-
-
-//LONG RUNNING TASK
-for($i = 1; $i <= 10; $i++) {
-    send_message($i, 'on iteration ' . $i . ' of 10' , $i / $i);
-
-    sleep(1);
-}
-
-send_message('CLOSE', 'Process complete');
 ?>

@@ -421,7 +421,7 @@ while ($row = $res->fetch_assoc()) {
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	////  If queried player is a CATCHER compare to both pitchers in best_team /////////
-  elseif (stripos($t_position, 'C') !== false) {
+  else if (stripos($t_position, 'C') !== false) {
 	  $p_points = $best_team['c00_p'];
 	  $p_salary = $best_team['c00_s'];
 	  $p_key    = "c00";
@@ -438,7 +438,7 @@ while ($row = $res->fetch_assoc()) {
 	////////////////////////////////////////////////////////////////////////////////////////
 
 	////  If queried player is a FIRST BASEMAN compare to both pitchers in best_team /////////
-  } elseif (stripos($t_position, '1') !== false) {
+  } else if (stripos($t_position, '1') !== false) {
 	  $p_points = $best_team['F00_p'];
 	  $p_salary = $best_team['F00_s'];
 	  $p_key    = "F00";
@@ -455,7 +455,7 @@ while ($row = $res->fetch_assoc()) {
 	////////////////////////////////////////////////////////////////////////////////////////
 
 	////  If queried player is a SECOND BASEMAN compare to both pitchers in best_team /////////
-  } elseif (stripos($t_position, '2') !== false) {
+  } else if (stripos($t_position, '2') !== false) {
 	  $p_points = $best_team['S00_p'];
 	  $p_salary = $best_team['S00_s'];
 	  $p_key    = "S00";
@@ -472,7 +472,7 @@ while ($row = $res->fetch_assoc()) {
 	////////////////////////////////////////////////////////////////////////////////////////
 
 	////  If queried player is a THIRD BASEMAN compare to both pitchers in best_team /////////
-  } elseif (stripos($t_position, '3') !== false) {
+  } else if (stripos($t_position, '3') !== false) {
 	  $p_points = $best_team['T00_p'];
 	  $p_salary = $best_team['T00_s'];
 	  $p_key    = "T00";
@@ -489,7 +489,7 @@ while ($row = $res->fetch_assoc()) {
 	////////////////////////////////////////////////////////////////////////////////////////
 
 	////  If queried player is a SHORT STOP compare to both pitchers in best_team /////////
-  } elseif (stripos($t_position, 'SS') !== false) {
+  } else if (stripos($t_position, 'SS') !== false) {
 	  $p_points = $best_team['SS0_p'];
 	  $p_salary = $best_team['SS0_s'];
 	  $p_key    = "SS0";
@@ -506,7 +506,7 @@ while ($row = $res->fetch_assoc()) {
 	////////////////////////////////////////////////////////////////////////////////////////
 
 	////  If queried player is a OUT FIELDER compare to both pitchers in best_team /////////
-  } elseif (stripos($t_position, 'OF') !== false) {
+  } else if (stripos($t_position, 'OF') !== false) {
 	  $p_points = $best_team['O00_p'];
 	  $p_salary = $best_team['O00_s'];
 	  $p_key    = "O00";

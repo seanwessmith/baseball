@@ -22,9 +22,11 @@ Future Additions:
 
 ************IN PROGRESS************
 
-x. index.php Convert MYSQL position into workable variable
-
 ***********************************
+
+x. have only one table for DraftKing CSV files, link foreign key to csv_link table
+
+x. Only show probable pitchers in index.php (http://mlb.mlb.com/news/probable_pitchers/)
 
 x. Need to have cron job that runs p_update.php daily
 

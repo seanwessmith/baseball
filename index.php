@@ -37,7 +37,7 @@ if ($mysqli->connect_errno) {
 ////Build new table and view from CSV URL////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9633";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9612";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -217,8 +217,8 @@ while ($row = $res->fetch_assoc()) {
 		//set variable to sum of $allSalary
 		$tot_sal = array_sum($allSalary);
 
-	$unProbable = "AND name NOT IN ('Kendall Graveman')";
-	$sql = "SELECT * FROM $viewName WHERE position like '%$value%' AND salary_key NOT IN($keys) $unProbable ORDER BY value DESC LIMIT 0,1";
+	$unProbable = "AND name NOT IN ('')";
+	$sql = "SELECT * FROM $viewName WHERE position like '%$value%' AND salary_key NOT IN($keys) ORDER BY value DESC LIMIT 0,1";
 	$res = $mysqli->query($sql);
 	$res->data_seek(0);
 	while ($row = $res->fetch_assoc()) {
@@ -306,7 +306,7 @@ for ($no_new_players = 0; $no_new_players < 1;) {
 
 
 //Select the best valued player from the database thats not in best team//
-$sql0 = "SELECT * FROM $viewName WHERE salary_key NOT IN ($keys) AND avg_points > $minPoints $unProbable ORDER BY value DESC LIMIT $var,1";
+$sql0 = "SELECT * FROM $viewName WHERE salary_key NOT IN ($keys) AND avg_points > $minPoints ORDER BY value DESC LIMIT $var,1";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {

@@ -10,8 +10,12 @@ if ($mysqli->connect_errno) {
 }
 //END SQL CONNECTION   //
 
+///INPUT latest draftkings table here/////
+$dkings_table = "baseball_1461844266";
+//////////////////////////////////////////
+
 //Grab record count
-$sql0 = "SELECT count(*) AS rec_count FROM (SELECT a.* FROM baseball_1461521597 a LEFT JOIN players b on a.name = b.player_name
+$sql0 = "SELECT count(*) AS rec_count FROM (SELECT a.* FROM $dkings_table a LEFT JOIN players b on a.name = b.player_name
          WHERE b.player_name IS NULL AND a.position like '%P%') a";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
@@ -19,11 +23,10 @@ while ($row = $res->fetch_assoc()) {
 $rec_count = $row['rec_count'];
 }
 
-//Grab one unmatched player
-$step = 0;
+//Cycle through 1 player
 for ($y = 0; $y < $rec_count;) {
-$sql1 = "SELECT a.* FROM baseball_1461521597 a LEFT JOIN players b on a.name = b.player_name
-         WHERE b.player_name IS NULL AND a.position like '%P%' LIMIT $step,1";
+$sql1 = "SELECT a.* FROM $dkings_table a LEFT JOIN players b on a.name = b.player_name
+         WHERE b.player_name IS NULL AND a.position like '%P%' LIMIT 0,1";
 $res = $mysqli->query($sql1);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
@@ -51,7 +54,6 @@ foreach($bigDivs as $div) {
       break;
     }
 }
-$step++;
 $y++;
 }
 ?>

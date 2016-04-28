@@ -1,9 +1,25 @@
 <?php
+//Send updates while script is running
+header('Content-Type: text/event-stream');
+header('Cache-Control: no-cache');
+
+//Prevent timing out
 ini_set( 'default_socket_timeout', 120 );
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 require('simple_html_dom.php');
+
+//Send updates while script is running
+function send_message($id, $message, $progress) {
+    $d = array('message' => $message , 'progress' => $progress);
+
+    echo "id: $id" . PHP_EOL;
+    echo "data: " . json_encode($d) . PHP_EOL;
+    echo PHP_EOL;
+
+    flush();
+}
 
 ////CONNECT TO SQL        ////
 $mysqli = new mysqli("localhost", "root", "root", "dkings");
@@ -12,9 +28,9 @@ if ($mysqli->connect_errno) {
 }
 //// END SQL CONNECTION  ////
 $startTime = time();
-echo "Start time: ".$startTime."<br>";
+echo "Start time: ".$startTime;
 ////INPUT: SELECT statement that selects players needing updating////
-$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY player_id DESC";
+$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() + 1 ORDER BY player_id DESC";
 /////////////////////////////////////////////////////////////////////
 
 //Grab record count
@@ -28,6 +44,7 @@ $step        = 0;
 $updateCount = 0;
 $newRecords  = 0;
 $noTable     = 0;
+$i           = 0;
 $noTablePlayer = array();
 for ($y = 0; $y < $rec_count;) {
 //Reset PHP script processing time to prevent script ending after 30 seconds//
@@ -255,17 +272,23 @@ if ($runSQL == 1) {
   $res = $mysqli->query($sql3);
   $newRecords++;
 }
+$updateCount++;
+//Send updates while script is running
+$i++;
+if($i %20 == 0) {
+send_message($i,'On iteration ' . $updateCount . ' of '.$rec_count, round(($updateCount / $rec_count) * 10 ,2));
+}
 //Set refrehsed_on date for the newlyupdated player
 $sql5 = "UPDATE players SET `refreshed_on` = curdate() WHERE `player_id` = $playerID ";
 $res = $mysqli->query($sql5);
-$updateCount++;
 $y++;
 $step++;
 }
-$totalTime = $startTime - time();
+$totalTime = time() - $startTime;
 echo "Total Time Taken: ".$totalTime;
 echo "<br> Total Players updated: ".$updateCount;
 echo "<br> Total Players with new records: ".$newRecords;
 echo "<br> Number of players that haven't played in 2016: ".$noTable."<br><br>";
 print_r($noTablePlayer);
+send_message('CLOSE', 'Process complete');
 ?>

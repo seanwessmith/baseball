@@ -30,6 +30,8 @@ x. Only show probable pitchers in index.php (http://mlb.mlb.com/news/probable_pi
 
 x. Need to have cron job that runs p_update.php daily
 
+x. Implement a queue to process large updates faster
+
 x. Upload to AWS
 
 x. Add cron job to refresh database from this link, needs to reference a schedule so it refreshes only updated teams.

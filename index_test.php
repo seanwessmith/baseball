@@ -43,57 +43,88 @@ $csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestType
 $viewName   = NULL;
 $csv_link   = NULL;
 $oldCSVLink = NULL;
-$sql0 = "SELECT csv_link, table_name FROM link_table WHERE csv_link = '$csvLink'";
+$sql0 = "SELECT url FROM csv_url WHERE url = '$csvLink'";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
+if ($res !== 0) {
 while ($row = $res->fetch_assoc()) {
-  $viewName = $row['table_name']."_view";
-	$oldCSVLink = $row['csv_link'];
+	$oldCSVLink = $row['url'];
+}
 }
 
 if ($oldCSVLink != $csvLink) {
-
-//Grab CSV file from Draft Kings //
-$file = file_get_contents($csvLink);
-file_put_contents('DKSalaries.csv', $file);
-///////////////////////////////////
-
-$tableName = "baseball_".strtotime("now");
-
-$sql1 = "INSERT INTO link_table (csv_link, table_name) VALUES ('$csvLink', '$tableName');";
+////Insert csv url into the csv_url table////
+$sql1 = "INSERT INTO csv_url (url, added_on) VALUES ('$csvLink', curdate());";
 $res = $mysqli->query($sql1);
+$sql5 = "SELECT csv_id FROM csv_url WHERE url = '".$csvLink."'";
+$res = $mysqli->query($sql5);
+while ($row = $res->fetch_assoc()) {
+	$csv_id = $row['csv_id'];
+}
+/////////////////////////////////////////////
 
-$sql2 = "CREATE TABLE $tableName (position VARCHAR(10), name VARCHAR(100), salary INT, game_info VARCHAR(50), avg_points DECIMAL(5,3), team varchar(50))";
+////Download new CSV and Parse into dk_main insert statment////
+$csvData = file_get_contents($csvLink);
+$lines = explode(PHP_EOL, $csvData);
+$array = array();
+foreach ($lines as $line) {
+    $csvArray[] = str_getcsv($line);
+}
+unset($csvArray[0]);
+array_pop($csvArray);
+///////////////////////////////////////////////////////////////
+
+////Part 1 of 3 for the SQL statement
+$sql2 = "INSERT INTO dk_main (`name`, `position`, `team`, `added_on`) VALUES ";
+////Part 2 of 3 for the SQL statment
+$i = 0;
+foreach ($csvArray as $array){
+	$name     = str_replace("'","''", $array[1]);
+	$position = $array[0];
+	$team     = str_replace("'","''", $array[5]);
+	if ($i == 0) {
+		$sql2 .= "('".$name."', '".$position."', '".$team."', curdate())";
+
+	} else {
+    $sql2 .= ", ('".$name."', '".$position."', '".$team."', curdate())";
+	}
+	$i = 1;
+}
+////Part 3 of 3 for the SQL statement
+$sql2 .= " ON DUPLICATE KEY UPDATE `position` = VALUES(position), `team` = VALUES(team), `changed_on` = curdate();";
+
+////EXECUTE SQL statement
 $res = $mysqli->query($sql2);
 
-$sql3 = "
-LOAD DATA LOCAL INFILE 'DKSalaries.csv'
-INTO TABLE $tableName
-FIELDS TERMINATED BY ','
-ENCLOSED BY '\"'
-LINES TERMINATED BY '\r\n'
-IGNORE 1 LINES
-(position, name, salary, game_info, avg_points, team) ;";
-$res = $mysqli->query($sql3);
-
-$sql4 = "ALTER TABLE $tableName ADD salary_key INT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST";
-$res = $mysqli->query($sql4);
-
-$sql5 = "ALTER TABLE $tableName ADD value INT";
-$res = $mysqli->query($sql5);
-
-$sql6 = "UPDATE $tableName SET value = TRUNCATE((avg_points / salary)*100000, 2)";
-$res = $mysqli->query($sql6);
-
-$viewName = $tableName."_view";
-$sql7 = "CREATE VIEW $viewName AS SELECT * FROM $tableName ORDER BY value DESC";
-$res = $mysqli->query($sql7);
-
-$res = $mysqli->query($sql0);
-$res->data_seek(0);
-while ($row = $res->fetch_assoc()) {
-  $viewName = $row['table_name']."_view";
+////Grab the player_id from dk_main and push onto the csvArray
+foreach ($csvArray as $key => &$array){
+	$name = str_replace("'","''", $array[1]);
+	  $sql3 = "SELECT player_id FROM dk_main WHERE `name` = '".$name."'";
+		$res = $mysqli->query($sql3);
+		$res->data_seek(0);
+		if ($res !== 0) {
+		  while ($row = $res->fetch_assoc()) {
+		    $array[] = $row['player_id'];
+		  }
+    }
 }
+
+////Insert records into the dk_details table
+$sql4 = "INSERT INTO dk_detail (`player_id`, `salary`, `points`, `csv_id`, `added_on`) VALUES ";
+$i = 0;
+foreach ($csvArray as $array){
+	$player_id = str_replace("'","''", $array[6]);
+	$salary    = $array[2];
+	$points    = $array[4];
+	if ($i == 0) {
+		$sql4 .= "('".$player_id."', '".$salary."', '".$points."','".$csv_id."', curdate())";
+
+	} else {
+    $sql4 .= ", ('".$player_id."', '".$salary."', '".$points."','".$csv_id."', curdate())";
+	}
+	$i = 1;
+}
+$res = $mysqli->query($sql4);
 }
 
 ?>
@@ -193,7 +224,7 @@ while ($row = $res->fetch_assoc()) {
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
 	////Build the $best_team array  ----  First Pass to make sure every position is populated////
-
+	/*
 	foreach($pos_cur as $key=>$value) {
 
 		//create list of $best_team keys
@@ -522,7 +553,7 @@ while ($row = $res->fetch_assoc()) {
 	  }
   }
 	////////////////////////////////////////////////////////////////////////////////////////
-*/
+
 // if variable is larger or equal to record count, reset variable and set loop counter//
 if ($var >= $rec_count) {
 	if ($new_player == 0) {
@@ -539,7 +570,7 @@ $y++;
 
 //// END second pass of best_team loop ////
 //////////////////////////////////////////
-
+*/
 ?>
 
 <!-- Build the form that displays active players to the user-->

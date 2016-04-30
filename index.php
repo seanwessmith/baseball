@@ -3,9 +3,7 @@
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
 	<meta content="width=device-width,initial-scale=1.0,user-scalable=no,minimum-scale=1.0,maximum-scale=1.0" id="viewport" name="viewport">
-	<link rel="icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="bootstrap.css">
-	<link href="http://fonts.googleapis.com/css?family=Raleway:300" rel="stylesheet" type="text/css">
 	<link rel="stylesheet" type="text/css" href="wynd.css">
 	<script src="jquery-1.11.3.min.js"></script>
 	<script src="migrate.js"></script>
@@ -20,6 +18,7 @@
 	        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 	    <![endif]-->
 	<title>Fantasy Baseball Quant</title>
+
 </head>
 <body>
 
@@ -43,57 +42,105 @@ $csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestType
 $viewName   = NULL;
 $csv_link   = NULL;
 $oldCSVLink = NULL;
-$sql0 = "SELECT csv_link, table_name FROM link_table WHERE csv_link = '$csvLink'";
+$new_csv    = 0;
+$sql0 = "UPDATE dk_csv SET active = '0'";
+$res = $mysqli->query($sql0);
+$sql0 = "SELECT url FROM dk_csv WHERE url = '$csvLink'";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
+if ($res !== 0) {
 while ($row = $res->fetch_assoc()) {
-  $viewName = $row['table_name']."_view";
-	$oldCSVLink = $row['csv_link'];
+	$oldCSVLink = $row['url'];
+}
 }
 
 if ($oldCSVLink != $csvLink) {
+		$new_csv = 1;
+  ////Insert csv url into the dk_csv table////
+  $sql1 = "INSERT INTO dk_csv (url, added_on, active) VALUES ('$csvLink', curdate(), '1');";
+  $res = $mysqli->query($sql1);
+} else {
+	////Set csv to active
+	$sql1 = "UPDATE dk_csv SET active = '1' WHERE url = '".$csvLink."'";
+	$res = $mysqli->query($sql1);
+}
+$sql5 = "SELECT csv_id FROM dk_csv WHERE url = '".$csvLink."'";
+$res = $mysqli->query($sql5);
+while ($row = $res->fetch_assoc()) {
+	$csv_id = $row['csv_id'];
+}
 
-//Grab CSV file from Draft Kings //
-$file = file_get_contents($csvLink);
-file_put_contents('DKSalaries.csv', $file);
-///////////////////////////////////
+/////////////////////////////////////////////
 
-$tableName = "baseball_".strtotime("now");
+////Download new CSV and Parse into dk_main insert statment////
+$csvData = file_get_contents($csvLink);
+$lines = explode(PHP_EOL, $csvData);
+$array = array();
+foreach ($lines as $line) {
+    $csvArray[] = str_getcsv($line);
+}
+unset($csvArray[0]);
+array_pop($csvArray);
+///////////////////////////////////////////////////////////////
 
-$sql1 = "INSERT INTO link_table (csv_link, table_name) VALUES ('$csvLink', '$tableName');";
-$res = $mysqli->query($sql1);
+////Part 1 of 3 for the SQL statement
+$sql2 = "INSERT INTO dk_main (`name`, `position`, `team`, `added_on`) VALUES ";
+////Part 2 of 3 for the SQL statment
+$i = 0;
+foreach ($csvArray as $array){
+	$name     = str_replace("'","''", $array[1]);
+	$position = $array[0];
+	$team     = str_replace("'","''", $array[5]);
+	if ($i == 0) {
+		$sql2 .= "('".$name."', '".$position."', '".$team."', curdate())";
 
-$sql2 = "CREATE TABLE $tableName (position VARCHAR(10), name VARCHAR(100), salary INT, game_info VARCHAR(50), avg_points DECIMAL(5,3), team varchar(50))";
+	} else {
+    $sql2 .= ", ('".$name."', '".$position."', '".$team."', curdate())";
+	}
+	$i = 1;
+}
+////Part 3 of 3 for the SQL statement
+$sql2 .= " ON DUPLICATE KEY UPDATE `position` = VALUES(position), `team` = VALUES(team), `changed_on` = curdate();";
+
+////EXECUTE SQL statement
+$res = $mysqli->query($sql5);
 $res = $mysqli->query($sql2);
 
-$sql3 = "
-LOAD DATA LOCAL INFILE 'DKSalaries.csv'
-INTO TABLE $tableName
-FIELDS TERMINATED BY ','
-ENCLOSED BY '\"'
-LINES TERMINATED BY '\r\n'
-IGNORE 1 LINES
-(position, name, salary, game_info, avg_points, team) ;";
-$res = $mysqli->query($sql3);
-
-$sql4 = "ALTER TABLE $tableName ADD salary_key INT NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST";
-$res = $mysqli->query($sql4);
-
-$sql5 = "ALTER TABLE $tableName ADD value INT";
-$res = $mysqli->query($sql5);
-
-$sql6 = "UPDATE $tableName SET value = TRUNCATE((avg_points / salary)*100000, 2)";
-$res = $mysqli->query($sql6);
-
-$viewName = $tableName."_view";
-$sql7 = "CREATE VIEW $viewName AS SELECT * FROM $tableName ORDER BY value DESC";
-$res = $mysqli->query($sql7);
-
-$res = $mysqli->query($sql0);
-$res->data_seek(0);
-while ($row = $res->fetch_assoc()) {
-  $viewName = $row['table_name']."_view";
+////Grab the player_id from dk_main and push onto the csvArray
+foreach ($csvArray as $key => &$array){
+	$name = str_replace("'","''", $array[1]);
+	  $sql3 = "SELECT player_id FROM dk_main WHERE `name` = '".$name."'";
+		$res = $mysqli->query($sql3);
+		$res->data_seek(0);
+		if ($res !== 0) {
+		  while ($row = $res->fetch_assoc()) {
+		    $array[] = $row['player_id'];
+		  }
+    }
 }
+
+////Insert records into the dk_details table if there is a new CSV
+if ($new_csv == 1) {
+$sql4 = "INSERT INTO dk_detail (`player_id`, `salary`, `points`, `value`, `csv_id`, `added_on`) VALUES ";
+$i = 0;
+foreach ($csvArray as $array){
+	$player_id = str_replace("'","''", $array[6]);
+	$salary    = $array[2];
+	$points    = $array[4];
+	if ($salary != 0 && $points != 0) {
+	$value     = round(($points/$salary)*100000);
+} else {
+	$value = 0;
+}
+	if ($i == 0) {
+		$sql4 .= "('".$player_id."', '".$salary."', '".$points."', '".$value."','".$csv_id."', curdate())";
+
+	} else {
+    $sql4 .= ", ('".$player_id."', '".$salary."', '".$points."','".$value."','".$csv_id."', curdate())";
+	}
+	$i = 1;
+}
+$res = $mysqli->query($sql4);
 }
 
 ?>
@@ -180,20 +227,21 @@ while ($row = $res->fetch_assoc()) {
   //Set hard values, sal_cap and set tot_sal to 0
 	$sal_cap = 50000;
 	$tot_sal = 0;
+	//Create a best team array
+	$best_team = array("p00_n"=>"0","p00_s"=>"0","p00_v"=>"0","p00_k"=>"0","p00_p"=>"0","p00_t"=>"0",
+										 "p01_n"=>"0","p01_s"=>"0","p01_v"=>"0","p01_k"=>"0","p01_p"=>"0","p01_t"=>"0",
+										 "c00_n"=>"0","c00_s"=>"0","c00_v"=>"0","c00_k"=>"0","c00_p"=>"0","c00_t"=>"0",
+										 "f00_n"=>"0","f00_s"=>"0","f00_v"=>"0","f00_k"=>"0","f00_p"=>"0","f00_t"=>"0",
+										 "s00_n"=>"0","s00_s"=>"0","s00_v"=>"0","s00_k"=>"0","s00_p"=>"0","s00_t"=>"0",
+										 "t00_n"=>"0","t00_s"=>"0","t00_v"=>"0","t00_k"=>"0","t00_p"=>"0","t00_t"=>"0",
+										 "ss0_n"=>"0","ss0_s"=>"0","ss0_v"=>"0","ss0_k"=>"0","ss0_p"=>"0","ss0_t"=>"0",
+										 "o00_n"=>"0","o00_s"=>"0","o00_v"=>"0","o00_k"=>"0","o00_p"=>"0","o00_t"=>"0",
+										 "o01_n"=>"0","o01_s"=>"0","o01_v"=>"0","o01_k"=>"0","o01_p"=>"0","o01_t"=>"0",
+										 "o02_n"=>"0","o02_s"=>"0","o02_v"=>"0","o02_k"=>"0","o02_p"=>"0","o02_t"=>"0");
 
-	//Select top valued baseball players
-	$pos_cur = array("p00"=>"P","p01"=>"P","c00"=>"C","f00"=>"1B","s00"=>"2B","t00"=>"3B","ss0"=>"SS","o00"=>"OF","o01"=>"OF","o02"=>"OF");
-	$best_team = array("p00_n"=>"P","p00_s"=>"P","p00_v"=>"P","p00_k"=>"P","p00_p"=>"P","p00_t"=>"P","p01_n"=>"P","p01_s"=>"P","p01_v"=>"P","p01_k"=>"P","p01_p"=>"P",
-	"p01_t"=>"P","c00_n"=>"c","c00_s"=>"c","c00_v"=>"c","c00_k"=>"c","c00_p"=>"c","c00_t"=>"c","f00_n"=>"first","f00_s"=>"first","f00_v"=>"first","f00_k"=>"first",
-	"f00_p"=>"first","f00_t"=>"first","s00_n"=>"second","s00_s"=>"second","s00_v"=>"second","s00_k"=>"second","s00_p"=>"second","s00_t"=>"second",
-	"t00_n"=>"third","t00_s"=>"third","t00_v"=>"third","t00_k"=>"third","t00_p"=>"third","t00_t"=>"third","ss0_n"=>"ss","ss0_s"=>"ss","ss0_v"=>"ss","ss0_k"=>"ss","ss0_p"=>"ss","ss0_t"=>"ss",
-	"o00_n"=>"OF","o00_s"=>"OF","o00_v"=>"OF","o00_k"=>"OF","o00_p"=>"OF","o00_t"=>"OF","o01_n"=>"OF","o01_s"=>"OF","o01_v"=>"OF","o01_k"=>"OF","o01_p"=>"OF","o01_t"=>"OF",
-	"o02_n"=>"OF","o02_s"=>"OF","o02_v"=>"OF","o02_k"=>"OF","o02_p"=>"OF","o02_t"=>"OF");
-
-
+/*
 	/////////////////////////////////////////////////////////////////////////////////////////////
 	////Build the $best_team array  ----  First Pass to make sure every position is populated////
-
 	foreach($pos_cur as $key=>$value) {
 
 		//create list of $best_team keys
@@ -217,25 +265,26 @@ while ($row = $res->fetch_assoc()) {
 		//set variable to sum of $allSalary
 		$tot_sal = array_sum($allSalary);
 
-	$unProbable = "AND name NOT IN ('')";
-	$sql = "SELECT * FROM $viewName WHERE position like '%$value%' AND salary_key NOT IN($keys) ORDER BY value DESC LIMIT 0,1";
+	$sql = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
+					FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
+					AND dk_detail.player_id = dk_main.player_id ORDER BY value DESC LIMIT 0,1";
 	$res = $mysqli->query($sql);
 	$res->data_seek(0);
 	while ($row = $res->fetch_assoc()) {
-		$t_salary = '';
-		$t_name = '';
-		$t_value = '';
-		$t_salkey = '';
-		$t_points = '';
-		$t_points = $row['avg_points'];
-		$t_name = $row['name'];
-		$t_salkey = $row['salary_key'];
-		$t_salary = floatval($row['salary']);
-		$t_value = $row['value'];
+		$t_salary   = '';
+		$t_name     = '';
+		$t_value    = '';
+		$t_salkey   = '';
+		$t_points   = '';
+		$t_name     = $row['name'];
+		$t_points   = $row['points'];
+		$t_salkey   = $row['player_id'];
+		$t_salary   = floatval($row['salary']);
+		$t_value    = $row['value'];
 		$t_position = $row['position'];
-		$new_sal = $tot_sal + $t_salary;
+		$new_sal    = $tot_sal + $t_salary;
 
-		// If the new player has higher points and his salary doesn't break salary cap, then set temporary variables to g_[array number] //
+		// If the new player has higher points and his salary doesn't break salary cap, then add player to best_team //
 } if ($new_sal < $sal_cap) {
 	$best_team[substr($key,0,3)."_n"] = $t_name;
 	$best_team[substr($key,0,3)."_s"] = $t_salary;
@@ -245,25 +294,27 @@ while ($row = $res->fetch_assoc()) {
 	$best_team[substr($key,0,3)."_t"] = $t_position;
 }
 }
-
+*/
 //// END first pass of best_team loop ////
 //////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////////////////
-////BEGIN: Second Loop - replaces players with higher point players until sal cap is met////
-
-$y              = 0;
-$var            = 0;
-$new_player     = 0;
-$no_new_players = 0;
+/////////////////////////////////////////////////////////////////////////////////////////////////
+////BEGIN: Build Team Loop - adds players to the team starting with the highest value players////
 
 //Grab record count
-$res = $mysqli->query("SELECT count(*) AS rec_count FROM $viewName");
+$res = $mysqli->query("SELECT count(*) AS rec_count FROM dk_main, dk_detail, dk_csv
+											 WHERE dk_main.player_id = dk_detail.player_id AND dk_detail.csv_id = dk_csv.csv_id
+											 AND dk_csv.active = '1'");
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
 $rec_count = $row['rec_count'];
 }
 
+$y              = 0;
+$var            = 0;
+$new_player     = 0;
+$no_new_players = 0;
+$step           = 0;
 //                   BEGIN loop                 //
 for ($no_new_players = 0; $no_new_players < 1;) {
 
@@ -306,7 +357,26 @@ for ($no_new_players = 0; $no_new_players < 1;) {
 
 
 //Select the best valued player from the database thats not in best team//
-$sql0 = "SELECT * FROM $viewName WHERE salary_key NOT IN ($keys) AND avg_points > $minPoints ORDER BY value DESC LIMIT $var,1";
+$best_team_id = NULL;
+$order_by      = "value DESC";
+foreach ($best_team as $key4 => $value4) {
+	if (substr($key4, -1) == 'k') {
+		if ($value4 === "0") {
+		  $order_by = "salary ASC";
+	} elseif ($best_team_id === NULL) {
+		$best_team_id = "'".$value4."'";
+	} else {
+		$best_team_id .= " ,'".$value4."'";
+	}
+	}
+}
+if ($best_team_id !== NULL) {
+  $best_team_id = "AND dk_main.player_id NOT IN (".$best_team_id.")";
+}
+
+$sql0 = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
+			   FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
+				 AND dk_detail.player_id = dk_main.player_id $best_team_id ORDER BY $order_by LIMIT $var,1";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
@@ -316,16 +386,16 @@ while ($row = $res->fetch_assoc()) {
 	$t_salkey     = NULL;
 	$t_position   = NULL;
 	$t_points     = NULL;
-	$t_points = $row['avg_points'];
+	$t_points = $row['points'];
 	$t_name = $row['name'];
 	$t_position = $row['position'];
-	$t_salkey = floatval($row['salary_key']);
+	$t_salkey = floatval($row['player_id']);
 	$t_salary = floatval($row['salary']);
 	$t_value = $row['value'];
 }
 
 	////Replace MYSQL position with new Position////
-	$positionArray = array("SP"=>"p", "RP"=>"p", "C"=>"c", "1B"=>"f", "2B"=>"s", "3B"=>"t", "SS"=>"ss", "OF"=>"o");
+	$positionArray = array("SP"=>"p0", "RP"=>"p0", "C"=>"c0", "1B"=>"f0", "2B"=>"s0", "3B"=>"t0", "SS"=>"ss", "OF"=>"o0");
 
 	$new_position = NULL;
 	foreach ($positionArray as $key => $value) {
@@ -339,190 +409,53 @@ while ($row = $res->fetch_assoc()) {
 		}
 	////////////////////////////////////////////////
 
-	//// Test new player against all best_team Players ////
-		$pitcher     = array();
-		$newPosition = array();
 
-		if (strlen($new_position) > 1) {
-			$newPosition[] = substr($new_position, 0, 1);
+	//// Grabs the position and value type off the $new_position variable ////
+		$newPosition = array();
+		if (strlen($new_position) > 2) {
+			$newPosition[] = substr($new_position, 0, 2);
 			$newPosition[] = substr($new_position, -1);
 		} else {
 			$newPosition[] = $new_position;
 		}
 
+		////Grabs all player points and salary for the new position////
 		foreach($newPosition as $newValue) {
 			$p_points    = array();
 			$p_salary    = array();
+			// echo "<br>newValue: ".$newValue;
 			foreach($best_team as $key => $value){
 				//Grab Points from all best_team Pitchers
-    		if (substr($key, 0, 1) == $newValue && substr($key, -1) == "p"){
+    		if (substr($key, 0, 2) == $newValue && substr($key, -1) == "p"){
+
          	$p_points[$key] = $value;
     		}
 				//Grab Salary from all best_team pitchers
-				if (substr($key, 0, 1) == $newValue && substr($key, -1) == "s"){
+				if (substr($key, 0, 2) == $newValue && substr($key, -1) == "s"){
          	$p_salary[$key] = $value;
     		}
 			}
-		$step = 0;
-
+		//// Loops through however many players there are per the new position////
+		$step2 = 0;
 		foreach($p_points as $key => $value){
-			if ($tot_sal + $t_salary - array_values($p_salary)[$step] < $sal_cap && isset($p_points) && $t_points > array_values($p_points)[$step]) {
+			if ($tot_sal + $t_salary - array_values($p_salary)[$step2] < $sal_cap && isset($p_points) && $t_points > array_values($p_points)[$step2]) {
 				$p_key = substr($key, 0, 3);
 				$new_player = 1;
 				$var        = -1;
+				if ($best_team[$p_key."_n"] == 0) {
 				$best_team[$p_key."_n"] = $t_name;
 				$best_team[$p_key."_s"] = $t_salary;
 				$best_team[$p_key."_v"] = $t_value;
 				$best_team[$p_key."_k"] = $t_salkey;
 				$best_team[$p_key."_p"] = $t_points;
 				$best_team[$p_key."_t"] = $t_position;
+			  }
 				break 2;
     		}
+				$step2++;
 			}
-			$step++;
   	}
-	/////////////////////////////////////////////////////////////////////////////////////
 
-	/*
-	////  If queried player is a PITCHER compare to both pitchers in best_team /////////
-	if (stripos($t_position, 'SP') !== false || stripos($t_position, 'RP') !== false) {
-		echo "<br New points ".$t_points;
-		$p_salary   = array();
-		$p_points   = array();
-		$pitcher    = array();
-
-		foreach($best_team as $key => $value){
-			echo "<br New points ".$t_points;
-			//Grab Points from all best_team Pitchers
-    	if (substr($key, 0, 1) == "p" && substr($key, -1) == "p"){
-         $p_points[$key] = $value;
-    	}
-			//Grab Salary from all best_team pitchers
-			if (substr($key, 0, 1) == "p" && substr($key, -1) == "s"){
-         $p_salary[$key] = $value;
-    	}
-		}
-		$step = 0;
-		foreach($p_points as $key => $value){
-			if ($tot_sal + $t_salary - array_values($p_points)[$step] < $sal_cap && isset($p_points) && $t_points > array_values($p_points)[$step]) {
-				$p_key = substr($key, 0, 3);
-				$new_player = 1;
-				$best_team[$p_key."_n"] = $t_name;
-				$best_team[$p_key."_s"] = $t_salary;
-				$best_team[$p_key."_v"] = $t_value;
-				$best_team[$p_key."_k"] = $t_salkey;
-				$best_team[$p_key."_p"] = $t_points;
-				$best_team[$p_key."_t"] = $t_position;
-				break;
-    		}
-			$step++;
-  		}
-	}
-	/////////////////////////////////////////////////////////////////////////////////////
-
-	////  If queried player is a CATCHER compare to both pitchers in best_team /////////
-  else if (stripos($t_position, 'C') !== false) {
-	  $p_points = $best_team['c00_p'];
-	  $p_salary = $best_team['c00_s'];
-	  $p_key    = "c00";
-
-  	if ($tot_sal + $t_salary - $p_salary < $sal_cap && isset($p_points) && $t_points > $p_points) {
-			$new_player = 1;
-			$best_team[$p_key."_n"] = $t_name;
-			$best_team[$p_key."_s"] = $t_salary;
-			$best_team[$p_key."_v"] = $t_value;
-			$best_team[$p_key."_k"] = $t_salkey;
-			$best_team[$p_key."_p"] = $t_points;
-			$best_team[$p_key."_t"] = $t_position;
-	  }
-	////////////////////////////////////////////////////////////////////////////////////////
-
-	////  If queried player is a FIRST BASEMAN compare to both pitchers in best_team /////////
-  } else if (stripos($t_position, '1') !== false) {
-	  $p_points = $best_team['F00_p'];
-	  $p_salary = $best_team['F00_s'];
-	  $p_key    = "F00";
-
-	  if ($tot_sal + $t_salary - $p_salary < $sal_cap && isset($p_points) && $t_points > $p_points) {
-			$new_player = 1;
-			$best_team[$p_key."_n"] = $t_name;
-			$best_team[$p_key."_s"] = $t_salary;
-			$best_team[$p_key."_v"] = $t_value;
-			$best_team[$p_key."_k"] = $t_salkey;
-			$best_team[$p_key."_p"] = $t_points;
-			$best_team[$p_key."_t"] = $t_position;
-	  }
-	////////////////////////////////////////////////////////////////////////////////////////
-
-	////  If queried player is a SECOND BASEMAN compare to both pitchers in best_team /////////
-  } else if (stripos($t_position, '2') !== false) {
-	  $p_points = $best_team['S00_p'];
-	  $p_salary = $best_team['S00_s'];
-	  $p_key    = "S00";
-
-	  if ($tot_sal + $t_salary - $p_salary < $sal_cap && isset($p_points) && $t_points > $p_points) {
-			$new_player = 1;
-			$best_team[$p_key."_n"] = $t_name;
-			$best_team[$p_key."_s"] = $t_salary;
-			$best_team[$p_key."_v"] = $t_value;
-			$best_team[$p_key."_k"] = $t_salkey;
-			$best_team[$p_key."_p"] = $t_points;
-			$best_team[$p_key."_t"] = $t_position;
-	  }
-	////////////////////////////////////////////////////////////////////////////////////////
-
-	////  If queried player is a THIRD BASEMAN compare to both pitchers in best_team /////////
-  } else if (stripos($t_position, '3') !== false) {
-	  $p_points = $best_team['T00_p'];
-	  $p_salary = $best_team['T00_s'];
-	  $p_key    = "T00";
-
-	  if ($tot_sal + $t_salary - $p_salary < $sal_cap && isset($p_points) && $t_points > $p_points) {
-			$new_player = 1;
-			$best_team[$p_key."_n"] = $t_name;
-		  $best_team[$p_key."_s"] = $t_salary;
-			$best_team[$p_key."_v"] = $t_value;
-			$best_team[$p_key."_k"] = $t_salkey;
-	  	$best_team[$p_key."_p"] = $t_points;
-			$best_team[$p_key."_t"] = $t_position;
-	  }
-	////////////////////////////////////////////////////////////////////////////////////////
-
-	////  If queried player is a SHORT STOP compare to both pitchers in best_team /////////
-  } else if (stripos($t_position, 'SS') !== false) {
-	  $p_points = $best_team['SS0_p'];
-	  $p_salary = $best_team['SS0_s'];
-	  $p_key    = "SS0";
-
-	  if ($tot_sal + $t_salary - $p_salary < $sal_cap && isset($p_points) && $t_points > $p_points) {
-			$new_player = 1;
-			$best_team[$p_key."_n"] = $t_name;
-			$best_team[$p_key."_s"] = $t_salary;
-			$best_team[$p_key."_v"] = $t_value;
-			$best_team[$p_key."_k"] = $t_salkey;
-	  	$best_team[$p_key."_p"] = $t_points;
-			$best_team[$p_key."_t"] = $t_position;
-	  }
-	////////////////////////////////////////////////////////////////////////////////////////
-
-	////  If queried player is a OUT FIELDER compare to both pitchers in best_team /////////
-  } else if (stripos($t_position, 'OF') !== false) {
-	  $p_points = $best_team['O00_p'];
-	  $p_salary = $best_team['O00_s'];
-	  $p_key    = "O00";
-
-	  if ($tot_sal + $t_salary - $p_salary < $sal_cap && isset($p_points) && $t_points > $p_points) {
-		$new_player = 1;
-		$best_team[$p_key."_n"] = $t_name;
-		$best_team[$p_key."_s"] = $t_salary;
-		$best_team[$p_key."_v"] = $t_value;
-		$best_team[$p_key."_k"] = $t_salkey;
-		$best_team[$p_key."_p"] = $t_points;
-		$best_team[$p_key."_t"] = $t_position;
-	  }
-  }
-	////////////////////////////////////////////////////////////////////////////////////////
-*/
 // if variable is larger or equal to record count, reset variable and set loop counter//
 if ($var >= $rec_count) {
 	if ($new_player == 0) {
@@ -539,7 +472,6 @@ $y++;
 
 //// END second pass of best_team loop ////
 //////////////////////////////////////////
-
 ?>
 
 <!-- Build the form that displays active players to the user-->

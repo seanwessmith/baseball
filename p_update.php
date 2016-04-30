@@ -275,7 +275,7 @@ $updateCount++;
 //Send updates while script is running
 $i++;
 if($i %20 == 0) {
-send_message($i,'On iteration ' . $updateCount . ' of '.$rec_count, round(($updateCount / $rec_count) * 10 ,2)."%");
+send_message($i,'On iteration ' . $updateCount . ' of '.$rec_count, round(($updateCount / $rec_count) * 100 ,2)."%");
 }
 //Set refrehsed_on date for the newlyupdated player
 $sql5 = "UPDATE players SET `refreshed_on` = curdate() WHERE `player_id` = $playerID ";

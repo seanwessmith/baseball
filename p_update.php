@@ -29,7 +29,7 @@ if ($mysqli->connect_errno) {
 $startTime = time();
 echo "Start time: ".$startTime;
 ////INPUT: SELECT statement that selects players needing updating////
-$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY player_id DESC";
+$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() + 1 ORDER BY player_id DESC";
 /////////////////////////////////////////////////////////////////////
 
 //Grab record count
@@ -52,7 +52,7 @@ set_time_limit(0);
 //////////////////////////////////////////////////////////////////////////////
 
 //Select one player that needs updating
-$sql0 = $sqlSelect." LIMIT 0,1";
+$sql0 = $sqlSelect." LIMIT ".$step.",1";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
@@ -62,7 +62,7 @@ $playerID = $row['player_id'];
 
 $html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$espnID.'/year/2016');
 
-/*     THIS UPDATES PLAYERS STATIC INFO
+//    THIS UPDATES PLAYERS STATIC INFO
 //Test to see if page is the standard format needed to grab relevant info//
 $name     = NULL;
 $position = NULL;
@@ -172,9 +172,8 @@ if ($name != NULL && $date !== NULL) {
 
 $sql1 = "UPDATE players SET `espn_id` = '$espnID',`player_name` = '$name', `position` = '$position', `number` = '$number', `team` = '$team', `throw` = '$throw', `bat` = '$bat', `height` = '$height',
                               `weight` = '$weight',`birth_date` = '$date',`changed_on` = curdate() WHERE player_id = $playerID";
-echo $sql1."<br>";
 $res = $mysqli->query($sql1);
-*/
+}
 //Grab Field Stats of Player
 $table = array();
 $table = $html->find('table',1);
@@ -206,8 +205,6 @@ foreach(($table->find('tr')) as $row) {
         }
         if ($skipNextRow == 0) {
           if ($cellCounter == 0) {
-            //echo "<br>Cell Counter: ".$cellCounter."<br>";
-            //echo "Row Counter: ".$rowCounter."<br>";
             $cellData .= " 2016";
             $date =  date('Y/m/d', strtotime($cellData));
             if ($rowCounter == 3) {
@@ -241,14 +238,11 @@ foreach(($table->find('tr')) as $row) {
     //See if this players game has already been recorded in pitcher_stats
     $sql4 = "SELECT count(*) as p_count FROM pitcher_stats WHERE player_id = '$playerID' AND game_date = '$date'";
     if ($date !== 0 && $skipNextRow == 0) {
-      //echo "<br>sql4: ".$sql4;
-      //echo "<br>date: ".$date."<br>";
       $res = $mysqli->query($sql4);
       $res->data_seek(0);
       while ($row = $res->fetch_assoc()) {
         $pCount = $row['p_count'];
       }
-      //echo "# Records in DB :".$pCount."<br>";
       if ($pCount == 0) {
         $sql3 .= $cellSQL;
         $runSQL = 1;

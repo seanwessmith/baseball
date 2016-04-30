@@ -2,7 +2,6 @@ How to Run:
 
 index.php - Shows the best team given the salary cap
 
---OUTDATED: MERGED WITH p_update-- p_fetch   - fetches new players from ESPN's website
 p_espn_id - grabs players in dk_main that aren't in players and adds them to players complete with their ESPN id
 p_update  - updates players already in the players database
 p_unknown - fetches the ESPN_ID of a player from the DraftKings CSV sheet

@@ -33,8 +33,6 @@ if ($mysqli->connect_errno) {
 }
 //// END SQL CONNECTION  ////
 
-////Build new table and view from CSV URL////
-
 //Change this when using new draft kings link//
 $csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9612";
 ///////////////////////////////////////////////
@@ -54,6 +52,7 @@ while ($row = $res->fetch_assoc()) {
 }
 }
 
+////Add csv url to the dk_csv table if not there already
 if ($oldCSVLink != $csvLink) {
 		$new_csv = 1;
   ////Insert csv url into the dk_csv table////
@@ -69,7 +68,6 @@ $res = $mysqli->query($sql5);
 while ($row = $res->fetch_assoc()) {
 	$csv_id = $row['csv_id'];
 }
-
 /////////////////////////////////////////////
 
 ////Download new CSV and Parse into dk_main insert statment////
@@ -238,65 +236,6 @@ $res = $mysqli->query($sql4);
 										 "o00_n"=>"0","o00_s"=>"0","o00_v"=>"0","o00_k"=>"0","o00_p"=>"0","o00_t"=>"0",
 										 "o01_n"=>"0","o01_s"=>"0","o01_v"=>"0","o01_k"=>"0","o01_p"=>"0","o01_t"=>"0",
 										 "o02_n"=>"0","o02_s"=>"0","o02_v"=>"0","o02_k"=>"0","o02_p"=>"0","o02_t"=>"0");
-
-/*
-	/////////////////////////////////////////////////////////////////////////////////////////////
-	////Build the $best_team array  ----  First Pass to make sure every position is populated////
-	foreach($pos_cur as $key=>$value) {
-
-		//create list of $best_team keys
-		$keys = null;
-		foreach ($best_team as $key2 => $value2) {
-				if ((substr($key2, -2)) == '_k') {
-					if ($keys != null) {
-					$keys = $keys.",'".$value2."'";
-				} else {
-					$keys = "'".$value2."'";
-				}
-				}
-		}
-		//create list of $best_team salaries
-		$allSalary = array();
-		foreach ($best_team as $key3 => $value3) {
-				if ((substr($key3, -2)) == '_s') {
-					$allSalary[$key3]=$value3;
-				}
-		}
-		//set variable to sum of $allSalary
-		$tot_sal = array_sum($allSalary);
-
-	$sql = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
-					FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
-					AND dk_detail.player_id = dk_main.player_id ORDER BY value DESC LIMIT 0,1";
-	$res = $mysqli->query($sql);
-	$res->data_seek(0);
-	while ($row = $res->fetch_assoc()) {
-		$t_salary   = '';
-		$t_name     = '';
-		$t_value    = '';
-		$t_salkey   = '';
-		$t_points   = '';
-		$t_name     = $row['name'];
-		$t_points   = $row['points'];
-		$t_salkey   = $row['player_id'];
-		$t_salary   = floatval($row['salary']);
-		$t_value    = $row['value'];
-		$t_position = $row['position'];
-		$new_sal    = $tot_sal + $t_salary;
-
-		// If the new player has higher points and his salary doesn't break salary cap, then add player to best_team //
-} if ($new_sal < $sal_cap) {
-	$best_team[substr($key,0,3)."_n"] = $t_name;
-	$best_team[substr($key,0,3)."_s"] = $t_salary;
-	$best_team[substr($key,0,3)."_v"] = $t_value;
-	$best_team[substr($key,0,3)."_k"] = $t_salkey;
-	$best_team[substr($key,0,3)."_p"] = $t_points;
-	$best_team[substr($key,0,3)."_t"] = $t_position;
-}
-}
-*/
-//// END first pass of best_team loop ////
-//////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ////BEGIN: Build Team Loop - adds players to the team starting with the highest value players////
@@ -531,7 +470,6 @@ $y++;
     }
 
 	//each player has 6 attributes, $y waits until all 6 attributes are grabbed to print table
-
 	if ($position != null && $name != null && $salary != null && $points != null) {
 		echo "<tr><td>";
 		echo $position;

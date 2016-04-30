@@ -2,4 +2,4 @@
 SELECT players.player_id FROM baseball_1461521597, players where players.player_name = baseball_1461521597.name group by players.player_id
 
 ##2. Select Players not in master database but in dk.csv
-SELECT a.* FROM baseball_1461844266_view a LEFT JOIN players b on a.name = b.player_name WHERE b.player_name IS NULL AND a.position like '%P%'
+SELECT a.* FROM dk_main a LEFT JOIN players b on a.name = b.player_name WHERE b.player_name IS NULL AND a.position like '%P%'

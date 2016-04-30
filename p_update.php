@@ -29,7 +29,7 @@ if ($mysqli->connect_errno) {
 $startTime = time();
 echo "Start time: ".$startTime;
 ////INPUT: SELECT statement that selects players needing updating////
-$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() + 1 ORDER BY player_id DESC";
+$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY player_id DESC";
 /////////////////////////////////////////////////////////////////////
 
 //Grab record count

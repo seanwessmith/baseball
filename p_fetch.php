@@ -34,11 +34,11 @@ if ($mysqli->connect_errno) {
 //28655 - 28065
 //28065 - 28466
 ////////////////
-$pageID = '28466';
-for ($y = 0; $y < 1;) {
+$pageID = 0;
+for ($y = 0; $y < $rec_count;) {
 //Reset PHP script processing time to prevent script ending after 30 seconds
 set_time_limit(0);
-$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/5203/year/2016');
+$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$pageID.'/year/2016');
 ///////////////////////////////////////////////////////////////////////////
 //Test to see if page is the standard format needed to grab relevant info//
 $generalStats = $html->find('ul.general-info li');

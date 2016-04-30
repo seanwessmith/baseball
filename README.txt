@@ -2,7 +2,8 @@ How to Run:
 
 index.php - Shows the best team given the salary cap
 
-p_fetch   - fetches new players from ESPN's website
+--OUTDATED: MERGED WITH p_update-- p_fetch   - fetches new players from ESPN's website
+p_espn_id - grabs players in dk_main that aren't in players and adds them to players complete with their ESPN id
 p_update  - updates players already in the players database
 p_unknown - fetches the ESPN_ID of a player from the DraftKings CSV sheet
 
@@ -23,8 +24,6 @@ Future Additions:
 ************IN PROGRESS************
 
 ***********************************
-
-x. have only one table for DraftKing CSV files, link foreign key to csv_link table
 
 x. Only show probable pitchers in index.php (http://mlb.mlb.com/news/probable_pitchers/)
 

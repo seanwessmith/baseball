@@ -3,3 +3,10 @@ SELECT players.player_id FROM baseball_1461521597, players where players.player_
 
 ##2. Select Players not in master database but in dk.csv
 SELECT a.* FROM dk_main a LEFT JOIN players b on a.name = b.player_name WHERE b.player_name IS NULL AND a.position like '%P%'
+
+##3. Select real total points for each Pitchers
+UPDATE `pitcher_stats` SET `total_score`= ((`innings_pitched`*2.25)+(`strikeouts`*2)+(`win_result`*4)+(`earned_runs`*-2)+(`hits`*-.6)+(`walks`*-.6))
+
+##4. Select points, salary, total_points from all tables
+SELECT sum(total_score), player_name, dk_detail.salary, dk_detail.points FROM players, pitcher_stats, dk_detail, dk_main WHERE players.player_id = pitcher_stats.player_id AND dk_detail.player_id = dk_main.player_id AND dk_main.name = players.player_name GROUP BY player_name
+ORDER BY `dk_detail`.`salary`  DESC

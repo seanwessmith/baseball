@@ -34,3 +34,6 @@ x. Upload to AWS
 
 x. Add cron job to refresh database from this link, needs to reference a schedule so it refreshes only updated teams.
    https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=21&draftGroupId=8129
+
+
+543

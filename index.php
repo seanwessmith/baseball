@@ -34,7 +34,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9612";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9657";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -240,10 +240,14 @@ $res = $mysqli->query($sql4);
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ////BEGIN: Build Team Loop - adds players to the team starting with the highest value players////
 
+$sqlSelect = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
+			   FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
+				 AND dk_detail.player_id = dk_main.player_id AND dk_main.probable = '1'";
+$sql = "SELECT count(*) AS rec_count FROM ($sqlSelect) a";
 //Grab record count
-$res = $mysqli->query("SELECT count(*) AS rec_count FROM dk_main, dk_detail, dk_csv
-											 WHERE dk_main.player_id = dk_detail.player_id AND dk_detail.csv_id = dk_csv.csv_id
-											 AND dk_csv.active = '1'");
+$res = $mysqli->query($sql);
+
+
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
 $rec_count = $row['rec_count'];
@@ -313,9 +317,7 @@ if ($best_team_id !== NULL) {
   $best_team_id = "AND dk_main.player_id NOT IN (".$best_team_id.")";
 }
 
-$sql0 = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
-			   FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
-				 AND dk_detail.player_id = dk_main.player_id $best_team_id ORDER BY $order_by LIMIT $var,1";
+$sql0 = "$sqlSelect $best_team_id ORDER BY $order_by LIMIT $var,1";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
@@ -362,7 +364,6 @@ while ($row = $res->fetch_assoc()) {
 		foreach($newPosition as $newValue) {
 			$p_points    = array();
 			$p_salary    = array();
-			// echo "<br>newValue: ".$newValue;
 			foreach($best_team as $key => $value){
 				//Grab Points from all best_team Pitchers
     		if (substr($key, 0, 2) == $newValue && substr($key, -1) == "p"){

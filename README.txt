@@ -24,9 +24,9 @@ Future Additions:
 
 ***********************************
 
-x. Change $allPoints,
-
 x. Add options to index.php that toggle team building algorithms
+    x. opponent team plus or minus
+    x. home or away plus or minus
 
 x. Navigate DraftKings and submit drafts automatically
 

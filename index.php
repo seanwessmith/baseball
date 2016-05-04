@@ -239,19 +239,19 @@ $res = $mysqli->query($sql4);
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ////BEGIN: Build Team Loop - adds players to the team starting with the highest value players////
 
+////Base SQL statement
 $sqlSelect = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
 			   FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
-				 AND dk_detail.player_id = dk_main.player_id AND dk_main.probable = '1'";
+				 AND dk_detail.player_id = dk_main.player_id AND dk_detail.points > 0 AND dk_main.probable = '1'";
+
+//Grab record count from base SQL statement
 $sql = "SELECT count(*) AS rec_count FROM ($sqlSelect) a";
-//Grab record count
 $res = $mysqli->query($sql);
-
-
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
 $rec_count = $row['rec_count'];
 }
-
+////Initiate variables for use in the loop statment
 $y              = 0;
 $var            = 0;
 $new_player     = 0;
@@ -260,7 +260,7 @@ $step           = 0;
 //                   BEGIN loop                 //
 for ($no_new_players = 0; $no_new_players < 1;) {
 
-	//List of keys from all players on $best_team//
+	//Get list of keys from all players on $best_team//
 	$keys = null;
 	foreach ($best_team as $key2 => $value2) {
 			if ((substr($key2, -2)) == '_k') {
@@ -273,7 +273,7 @@ for ($no_new_players = 0; $no_new_players < 1;) {
 	}
 	//////////////////////////////////////////////
 
-	//Calculate salary of $best_team//////////
+	//Get total salary of $best_team//////////
 	$allSalary = array();
 	foreach ($best_team as $key3 => $value3) {
 			if ((substr($key3, -2)) == '_s') {
@@ -284,7 +284,7 @@ for ($no_new_players = 0; $no_new_players < 1;) {
 	/////////////////////////////////////////
 
 
-//Select the best valued player from the database thats not in best team//
+//Check to see if best team has any players//
 $best_team_id = NULL;
 $order_by      = "value DESC";
 foreach ($best_team as $key4 => $value4) {
@@ -298,10 +298,11 @@ foreach ($best_team as $key4 => $value4) {
 	}
 	}
 }
+////If best_team has players, set SQL to select different players////
 if ($best_team_id !== NULL) {
   $best_team_id = "AND dk_main.player_id NOT IN (".$best_team_id.")";
 }
-
+////Build final SQL statement////
 $sql0 = "$sqlSelect $best_team_id ORDER BY $order_by LIMIT $var,1";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
@@ -334,7 +335,6 @@ while ($row = $res->fetch_assoc()) {
 			}
 		}
 	////////////////////////////////////////////////
-
 
 	//// Grabs the position and value type off the $new_position variable ////
 		$newPosition = array();
@@ -493,18 +493,17 @@ $y++;
 <?php
 ////Functions/////
 //Minimum point player from $best_team//
-function minPoint() {
-	//Minimum point player from $best_team//
-	$allPoints = array();
-	foreach ($best_team as $key => $value) {
-			if ((substr($key, -2)) == '_p') {
-				$allPoints[$key]=$key;
-				$allPoints[$value]=$value;
-			}
-	}
-	$minPoints = min($allPoints);
-  ////////////////////////////////////////
-	return $minPoints;
+function minPoint($best_team) {
+ //Minimum point player from $best_team//
+ $allPoints = array();
+ foreach ($best_team as $key => $value) {
+		 if ((substr($key, -2)) == '_p') {
+			 $allPoints[$key]=$key;
+			 $allPoints[$value]=$value;
+		 }
+ }
+ $minPoints = min($allPoints);
+ return $minPoints;
 }
  ?>
 <script>

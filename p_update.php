@@ -209,7 +209,6 @@ foreach(($table->find('tr')) as $row) {
         }
         if ($cellData == "DATE") {
           $skipNextRow = 2;
-          echo "<br>skipping";
         }
         if ($skipNextRow == 0) {
           if ($cellCounter == 0) {

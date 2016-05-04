@@ -18,7 +18,6 @@
 	        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 	    <![endif]-->
 	<title>Fantasy Baseball Quant</title>
-
 </head>
 <body>
 
@@ -34,7 +33,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9657";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9692";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -260,20 +259,6 @@ $no_new_players = 0;
 $step           = 0;
 //                   BEGIN loop                 //
 for ($no_new_players = 0; $no_new_players < 1;) {
-
-	//Grab the Player key and points for worst player//
-	$allPoints = array();
-	foreach ($best_team as $key => $value) {
-			if ((substr($key, -2)) == '_p') {
-				$allPoints[$key]=$key;
-				$allPoints[$value]=$value;
-			}
-	}
-	//////////////////////////////////////////////////
-
-	//Minimum point player from $best_team//
-	$minPoints = min($allPoints);
-  ////////////////////////////////////////
 
 	//List of keys from all players on $best_team//
 	$keys = null;
@@ -505,7 +490,23 @@ $y++;
 </div>
 </div>
 </form>
-
+<?php
+////Functions/////
+//Minimum point player from $best_team//
+function minPoint() {
+	//Minimum point player from $best_team//
+	$allPoints = array();
+	foreach ($best_team as $key => $value) {
+			if ((substr($key, -2)) == '_p') {
+				$allPoints[$key]=$key;
+				$allPoints[$value]=$value;
+			}
+	}
+	$minPoints = min($allPoints);
+  ////////////////////////////////////////
+	return $minPoints;
+}
+ ?>
 <script>
 //autocomplete function
 $(function() {

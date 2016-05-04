@@ -10,3 +10,7 @@ UPDATE `pitcher_stats` SET `total_score`= ((`innings_pitched`*2.25)+(`strikeouts
 ##4. Select points, salary, total_points from all tables
 SELECT sum(total_score), player_name, dk_detail.salary, dk_detail.points FROM players, pitcher_stats, dk_detail, dk_main WHERE players.player_id = pitcher_stats.player_id AND dk_detail.player_id = dk_main.player_id AND dk_main.name = players.player_name GROUP BY player_name
 ORDER BY `dk_detail`.`salary`  DESC
+
+##5. Select average points from dk_csv
+select name, points, dk_main.player_id,  (sum(points) / count(*)) AS average_points, (MAX(points) - MIN(points)) as points_differance from dk_detail, dk_main WHERE dk_main.player_id = dk_detail.player_id group by dk_detail.player_id
+ORDER BY `points_differance`  DESC

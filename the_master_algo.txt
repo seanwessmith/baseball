@@ -5,3 +5,9 @@ The Master Algorithm- Insights
 	b. Add weather data
 
 2. Explore what are conjunctive concepts.
+
+3. Weighted functions, function only runs once the sum of weighted inputs equals a defined total. (98)
+	a. Perceptron algorithm
+	b. Backpropagation algorithm (108)
+
+4.

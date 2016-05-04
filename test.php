@@ -1,54 +1,37 @@
-<pre>
+<html>
+<head>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+	<title>Test</title>
+</head>
+<body>
+<!-- <form action="test.php">
+    <input type="text" name="txt" />
+    <input type="submit" class="button" name="opponent_team" value="opponent_team" />
+    <input type="submit" class="button" name="home_away" value="home_away" />
+</form> -->
 <?php
+// if($_GET){
+//     if(isset($_GET['opponent_team'])){
+//         opponent_team();
+//     }elseif(isset($_GET['home_away'])){
+//         home_away();
+//     }
+// }
+//
+//     function opponent_team()
+//     {
+//        echo "The opponent_team function is called.";
+//     }
+//     function home_away()
+//     {
+//        echo "The home_away function is called.";
+//     }
 
-include "classes.inc";
-
-// utility functions
-
-function print_vars($obj)
-{
-foreach (get_object_vars($obj) as $prop => $val) {
-    echo "\t$prop = $val\n";
-}
-}
-
-function print_methods($obj)
-{
-$arr = get_class_methods(get_class($obj));
-foreach ($arr as $method) {
-    echo "\tfunction $method()\n";
-}
-}
-
-function class_parentage($obj, $class)
-{
-if (is_subclass_of($GLOBALS[$obj], $class)) {
-    echo "Object $obj belongs to class " . get_class($GLOBALS[$obj]);
-    echo ", a subclass of $class\n";
-} else {
-    echo "Object $obj does not belong to a subclass of $class\n";
-}
+function writeMsg() {
+    echo "Hello world!";
 }
 
-// instantiate 2 objects
+writeMsg(); // call the function
 
-$veggie = new Vegetable(true, "blue");
-$leafy = new Spinach();
-
-// print out information about objects
-echo "veggie: CLASS " . get_class($veggie) . "\n";
-echo "leafy: CLASS " . get_class($leafy);
-echo ", PARENT " . get_parent_class($leafy) . "\n";
-
-// show veggie properties
-echo "\nveggie: Properties\n";
-print_vars($veggie);
-
-// and leafy methods
-echo "\nleafy: Methods\n";
-print_methods($leafy);
-
-echo "\nParentage:\n";
-class_parentage("leafy", "Spinach");
-class_parentage("leafy", "Vegetable");
 ?>

@@ -24,6 +24,12 @@ Future Additions:
 
 ***********************************
 
+x. Change $allPoints,
+
+x. Add options to index.php that toggle team building algorithms
+
+x. Navigate DraftKings and submit drafts automatically
+
 x. Only show probable pitchers in index.php (http://mlb.mlb.com/news/probable_pitchers/)
 
 x. Need to have cron job that runs p_update.php daily

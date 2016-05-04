@@ -1,3 +1,7 @@
+<html>
+<head>
+  <title>Player Information Fetch</title>
+</head>
 <?php
 
 ini_set('display_errors', 1);

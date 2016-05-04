@@ -1,3 +1,7 @@
+<html>
+<head>
+  <title>Player Update</title>
+</head>
 <?php
 //Send updates while script is running
 header('Content-Type: text/event-stream');
@@ -202,6 +206,10 @@ foreach(($table->find('tr')) as $row) {
         //Skip the two header columns following the Regular header and Monthly header
         if (strpos($cellData, 'Regular') == TRUE || $cellData == "Monthly Totals") {
           $skipNextRow = 1;
+        }
+        if ($cellData == "DATE") {
+          $skipNextRow = 2;
+          echo "<br>skipping";
         }
         if ($skipNextRow == 0) {
           if ($cellCounter == 0) {

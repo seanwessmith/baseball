@@ -1,6 +1,6 @@
 <html>
 <head>
-  <title>Probable Players</title>
+  <title>Daily Refresh</title>
 </head>
 <?php
 ini_set('display_errors', 1);

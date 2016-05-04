@@ -3,12 +3,12 @@
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
 	<meta content="width=device-width,initial-scale=1.0,user-scalable=no,minimum-scale=1.0,maximum-scale=1.0" id="viewport" name="viewport">
-	<link rel="stylesheet" type="text/css" href="bootstrap.css">
-	<link rel="stylesheet" type="text/css" href="wynd.css">
-	<script src="jquery-1.11.3.min.js"></script>
-	<script src="migrate.js"></script>
-	<script src="bootstrap.min.js"></script>
-	<script src="main.js"></script>
+	<link rel="stylesheet" type="text/css" href="./css/bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="./css/wynd.css">
+	<script src="./js/jquery-1.11.3.min.js"></script>
+	<script src="./js/migrate.js"></script>
+	<script src="./js/bootstrap.min.js"></script>
+	<script src="./js/main.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>

@@ -401,7 +401,7 @@ $y++;
 
 <!-- Build the form that displays active players to the user-->
 <form action=''>
-<div class="row padme" id="projects">
+<div class="row padme" id="team">
   <div class="col-md-8 box center" id="projects">
 			<div class="input-group">
 			<input type="text" id="tags" class="form-control" placeholder="Enter the player or team name...">
@@ -490,6 +490,13 @@ $y++;
 </div>
 </div>
 </form>
+
+<div class="row padme">
+	<div id="box1" class="col-md-8 box center">
+<input class="btn btn-transparent" target="_blank" name="opponent_team" value="Opponent team" />
+		</div>
+</div>
+
 <?php
 ////Functions/////
 //Minimum point player from $best_team//

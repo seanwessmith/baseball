@@ -50,7 +50,7 @@ function clip(){
         var elem = document.getElementById("clip"+(i+1));
         elem.style.clip = str;
     }
-    var proj = $("#projects");
+    var proj = $("#team");
     if( proj.length != 0){
 	    var b1;
 	    $(".baritem").removeClass("active");

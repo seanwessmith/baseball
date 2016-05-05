@@ -14,13 +14,16 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 require('simple_html_dom.php');
 
+$startTime = time();
 //Send updates while script is running
-function send_message($id, $message, $progress) {
-    $d = array('message' => $message , 'progress' => $progress);
+function send_message($startTime, $id, $message, $progress) {
+    $d = array('Iteration: ' => $message , 'progress' => $progress);
 
-    echo " id: $id" . PHP_EOL;
-    echo "data: " . json_encode($d) . PHP_EOL;
+    echo "<pre>Seconds: ";
+    echo time() - $startTime. PHP_EOL;
+    echo json_encode($d) . PHP_EOL;
     echo PHP_EOL;
+    echo "</pre>";
     flush();
 }
 
@@ -30,8 +33,6 @@ if ($mysqli->connect_errno) {
     echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
 }
 //// END SQL CONNECTION  ////
-$startTime = time();
-echo "Start time: ".$startTime;
 
 ////Update the probable players for the day////
 //Grab HTML page used to grep ESPN number
@@ -345,7 +346,7 @@ $updateCount++;
 //Send updates while script is running
 $i++;
 if($i %20 == 0) {
-send_message($i,'On iteration ' . $updateCount . ' of '.$rec_count, round(($updateCount / $rec_count) * 100 ,2)."%");
+send_message($startTime, $i, $updateCount . ' of '.$rec_count, round(($updateCount / $rec_count) * 100 ,2).'%');
 }
 //Set refrehsed_on date for the newlyupdated player
 $sql5 = "UPDATE players SET `refreshed_on` = curdate() WHERE `player_id` = $playerID ";

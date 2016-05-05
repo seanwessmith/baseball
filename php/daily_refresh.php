@@ -33,7 +33,7 @@ if ($mysqli->connect_errno) {
     echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
 }
 //// END SQL CONNECTION  ////
-
+/*
 ////Update the probable players for the day////
 //Grab HTML page used to grep ESPN number
 $html = file_get_html('https://rotogrinders.com/lineups/mlb?site=fanduel');
@@ -101,7 +101,7 @@ foreach($bigDivs as $div) {
     }
     }
     ////END the teams opponents////
-
+*/
 ////INPUT: SELECT statement that selects players needing updating////
 $sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() + 1 ORDER BY player_id DESC";
 /////////////////////////////////////////////////////////////////////
@@ -134,7 +134,8 @@ $espnID     = $row['espn_id'];
 $playerID = $row['player_id'];
 }
 
-$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$espnID.'/year/2016');
+// $html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$espnID.'/year/2016');
+$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/34861/year/2016');
 
 //    THIS UPDATES PLAYERS STATIC INFO
 //Test to see if page is the standard format needed to grab relevant info//

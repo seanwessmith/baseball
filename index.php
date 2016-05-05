@@ -156,7 +156,7 @@ $res = $mysqli->query($sql4);
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li id="homebar" class="baritem active"><a href="#content">Build</a></li>
-        <li id="projbar" class="baritem"><a href="#projects">Review</a></li>
+        <li id="projbar" class="baritem"><a href="#projects">Mission Control</a></li>
         <li id="connbar" class="baritem"><a href="#connect">History</a></li>
       </ul>
     </div>
@@ -402,7 +402,7 @@ $y++;
 <!-- Build the form that displays active players to the user-->
 <form action=''>
 <div class="row padme" id="projects">
-  <div class="col-md-8 box center">
+  <div class="col-md-8 box center" id="projects">
 			<div class="input-group">
 			<input type="text" id="tags" class="form-control" placeholder="Enter the player or team name...">
 			<span class="input-group-btn">

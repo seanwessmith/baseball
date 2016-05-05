@@ -54,8 +54,8 @@ function clip(){
     if( proj.length != 0){
 	    var b1;
 	    $(".baritem").removeClass("active");
-	    if((b1= (stop > proj.offset().top - 300)) && (stop < proj.offset().top + proj.outerHeight() - 900)){
-	        $("#mainblur").css("opacity", 1);
+	    if((b1= (stop > proj.offset().top - 100)) && (stop < proj.offset().top + proj.outerHeight() - 300)){
+	        $("#mainblur").css("opacity", 0);
 	        $("#projbar").addClass("active");
 	    }else{
 	        $("#mainblur").css("opacity", 0);
@@ -119,10 +119,10 @@ $(document).ready(function(){
                   var e = "";
                   for(var i = 0; i<ar.length; i++)
                   e += String.fromCharCode(ar[i]);
-                  
+
                   $(".email").html("Email");
                   $(".email").attr("href", "mailto:"+e);
-        
+
                   if( mobilecheck() ){
                   $("#mobilemsg").html("(Due to the way mobile scrolling events are handled, the blur effect may be a little glitchy)");
                   }

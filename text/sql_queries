@@ -14,3 +14,9 @@ ORDER BY `dk_detail`.`salary`  DESC
 ##5. Select average points from dk_csv
 select name, points, dk_main.player_id,  (sum(points) / count(*)) AS average_points, (MAX(points) - MIN(points)) as points_differance from dk_detail, dk_main WHERE dk_main.player_id = dk_detail.player_id group by dk_detail.player_id
 ORDER BY `points_differance`  DESC
+
+##6. Select duplicate pitcher_stats
+SELECT player_id, game_date, count(*) FROM `pitcher_stats` group by game_date, player_id ORDER BY count(*) DESC
+
+##7. Remove duplicate from pitcher_stats
+DELETE pitcher_stats.* FROM `pitcher_stats` left join (select max(pitcher_id) as pitcher_id from pitcher_stats group by game_date, player_id) a ON a.pitcher_id = pitcher_stats.pitcher_id WHERE a.pitcher_id IS NULL

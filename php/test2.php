@@ -33,9 +33,77 @@ if ($mysqli->connect_errno) {
     echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
 }
 //// END SQL CONNECTION  ////
+/*
+////Update the probable players for the day////
+//Grab HTML page used to grep ESPN number
+$html = file_get_html('https://rotogrinders.com/lineups/mlb?site=fanduel');
 
+$sql0 = "UPDATE dk_main SET probable = 0";
+$res = $mysqli->query($sql0);
+//Test to see if page has player name; if so echo ESPN number.
+$link = array();
+$bigDivs = $html->find('div.pitcher');
+foreach($bigDivs as $div) {
+  $sql1 = "UPDATE dk_main SET probable = 1 WHERE name = ";
+    $link = $div->find('a');
+    if (isset($link[0])) {
+        $href = $link[0]->innertext;
+        $sql1 .= "'".$href."'";
+        $res = $mysqli->query($sql1);
+    }
+  }
+  $bigDivs = $html->find('div.info');
+  foreach($bigDivs as $div) {
+    $sql1 = "UPDATE dk_main SET probable = 1 WHERE name = ";
+      $link = $div->find('a');
+      if (isset($link[0])) {
+          $href = $link[0]->innertext;
+          $sql1 .= "'".$href."'";
+          $res = $mysqli->query($sql1);
+      }
+
+    }
+    ////END update the probable players////
+
+    ////Update the team's opponents for the day////
+    $teams = array();
+    $sql0 = "SELECT * FROM team";
+    $res = $mysqli->query($sql0);
+    $res->data_seek(0);
+      while ($row = $res->fetch_assoc()) {
+        $teams[$row['team_name']] = $row['nickname'];
+      }
+      foreach ($teams as $key => $value) {
+    //Grab HTML page used to grep ESPN number
+    $html = file_get_html('http://espn.go.com/mlb/team/schedule/_/name/'.$value);
+
+    $link = array();
+    $bigDivs = $html->find('tr');
+    foreach($bigDivs as $div) {
+      $found = NULL;
+      $nobr = $div->find('nobr');
+      if (isset($nobr[0])) {
+        if (strpos($nobr[0], date('F j')) == true) {
+          $found = 1;
+        }
+      }
+      if ($found == 1) {
+        ////Grab the games location
+        $list = $div->find('li[class=game-status]');
+        $location = $list[0]->innertext;
+        ////Grab the opposing team
+        $list2 = $div->find('li[class=team-name]');
+        $href = $list2[0]->find('a');
+        $opponent = $href[0]->innertext;
+        $sql1 = "UPDATE team SET opponent = '$opponent' WHERE team_name = '$key'";
+        $res = $mysqli->query($sql1);
+    }
+    }
+    }
+    ////END the teams opponents////
+*/
 ////INPUT: SELECT statement that selects players needing updating////
-$sqlSelect = "SELECT * FROM players WHERE name = 'Clayton Kershaw' ORDER BY player_id DESC";
+$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() + 1 ORDER BY player_id DESC";
 /////////////////////////////////////////////////////////////////////
 
 //Grab record count
@@ -65,9 +133,9 @@ while ($row = $res->fetch_assoc()) {
 $espnID     = $row['espn_id'];
 $playerID = $row['player_id'];
 }
-
-// $html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$espnID.'/year/2016');
-$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/'.$espnID.'/year/2016');
+  echo "<br>ESPN_ID: ".$espnID;
+  echo " Player_ID: ".$playerID;
+$html = file_get_html('http://espn.go.com/mlb/player/gamelog/_/id/32525/year/2016');
 
 //    THIS UPDATES PLAYERS STATIC INFO
 //Test to see if page is the standard format needed to grab relevant info//
@@ -79,7 +147,7 @@ if ($generalStats != NULL) {
   preg_match('~>(.*?)<~', $pos_num, $output);
   $position = substr($output[1], -2);
 
-  if ($position == 'SP' || $position == 'RP') {
+  if ($position !== NULL) {
   //Grab General Stats of Player
 
   $generalStats2 = $html->find('h1');
@@ -91,13 +159,25 @@ if ($generalStats != NULL) {
   $pos_num = $generalStats2[0];
   preg_match('~>(.*?)<~', $pos_num, $output);
   $position = substr($output[1], -2);
+  if (strpos($position, 'F')) {
+    $position = "OF";
+  }
   $number   = substr($output[1], 1, 2);
 
-  $throw_bat = $generalStats2[1];
-  preg_match('~Throws: (.*?),~', $throw_bat, $output2);
-  $throw = $output2[1];
-  preg_match('~Bats: (.*?)<~', $throw_bat, $output3);
-  $bat = $output3[1];
+  $throw_bat = preg_replace('~[,:]~', '', $generalStats2[1]->innertext);
+  $arr = explode(' ', $throw_bat);
+  echo "<br><pre>";
+  print_r($arr);
+  echo "<br></pre>";
+  $how_many = count($arr);
+  for($i = 0; $i < $how_many; $i = $i + 2){
+    if ($arr[$i] == "Bats") {
+      $bat = $arr[$i+1];
+    } elseif ($arr[$i] == "Throws") {
+      $throw = $arr[$i+1];
+    }
+  }
+
 
   $teamArray = $generalStats2[2];
   preg_match('~<a(.*?)/a>~', $teamArray, $output4);
@@ -129,40 +209,37 @@ if ($generalStats != NULL) {
 }
 } else {
   $generalStats = $html->find('ul.player-metadata li');
-  //End this page if not one of the two defaults
   if ($generalStats != NULL) {
-  $pos_num = $generalStats[3];
-  preg_match('~\/span>(.*?)<\/li~', $pos_num, $output);
-  $position = $output[1];
-  if ($position == "Starting Pitcher") {
-    $position = "SP";
-  } elseif ($position == "Relief Pitcher") {
-    $position = "RP";
-  } else {
-    $pos_num = $generalStats[4];
-    preg_match('~\/span>(.*?)<\/li~', $pos_num, $output);
-    $position = $output[1];
-    if ($position == "Starting Pitcher") {
-      $position = "SP";
+  foreach ($generalStats as $key => $value) {
+    if (strpos($value->innertext, 'Date')) {
+      foreach($value->find('span') as $e) {
+        $e->outertext = '';
     }
-    if ($position == "Relief Pitcher") {
-      $position = "RP";
+    $date = $value->innertext;
+    $date = str_replace('Birth Date', '', $date);
+    $date =  date('Y/m/d', strtotime($date));
+  } elseif (strpos($value->innertext, 'Position')) {
+      $position = str_replace('Position', '', $value->innertext) ;
+      if (strpos($position, 'Field')) {
+        $position = "OF";
+      } elseif (strpos($position, 'Catcher')) {
+        $position = "C";
+      } elseif (strpos($position, 'Second')) {
+        $position = "2B";
+      } elseif (strpos($position, 'First')) {
+        $position = "1B";
+      } elseif (strpos($position, 'Third')) {
+        $position = "3B";
+      }
+      if (strpos($position, 'Short')) {
+        $position = "SS";
+      }
     }
-  }
-
-  if ($position == 'SP' || $position == 'RP') {
+}
   $generalStats = $html->find('h1');
   $name = $generalStats[0];
   preg_match('~>(.*?)<~', $name, $output);
   $name = str_replace('\'', '\\\'', $output[1]);
-
-  $generalStats = $html->find('ul.player-metadata li');
-  $birthDate = $generalStats[0];
-  preg_match('~\/span>(.*?)<\/li~', $birthDate, $output6);
-  $date = $output6[1];
-  $date = str_replace(',', '', $date);
-  //$date = str_replace(' ', '-', $date);
-  $date =  date('Y/m/d', strtotime($date));
 
   //Set defaults for incomplete data
   $number = 0;
@@ -173,14 +250,14 @@ if ($generalStats != NULL) {
   $weight = NULL;
 }
 }
-}
 
 if ($name != NULL && $date !== NULL) {
-
+echo "<br>Name: ".$name." Position: ".$position." Number: ".$number." Team: ".$team." Throw: ".$throw." Bat: ".$bat." Height: ".$height." Birth Date".$date;
 $sql1 = "UPDATE players SET `espn_id` = '$espnID',`player_name` = '$name', `position` = '$position', `number` = '$number', `team` = '$team', `throw` = '$throw', `bat` = '$bat', `height` = '$height',
                               `weight` = '$weight',`birth_date` = '$date',`changed_on` = curdate() WHERE player_id = $playerID";
 $res = $mysqli->query($sql1);
 }
+
 //Grab Field Stats of Player
 $table = array();
 $table = $html->find('table',1);
@@ -200,10 +277,11 @@ $cellSQL      = NULL;
 foreach(($table->find('tr')) as $row) {
   $rowCounter++;
     $rowData = array();
+    echo "<br>Row: ".$rowCounter;
     foreach($row->find('td') as $cell) {
         $cellData = $cell->innertext;
         //End the table loop once end is reached, determined by the cell "Totals"
-        if ($cellData == "Totals") {
+        if ($cellData == "Totals" || $cellData == "&nbsp;") {
           break 2;
         }
         //Skip the two header columns following the Regular header and Monthly header
@@ -215,6 +293,7 @@ foreach(($table->find('tr')) as $row) {
         }
         if ($skipNextRow == 0) {
           if ($cellCounter == 0) {
+            echo "<br>".$cellCounter." ".htmlspecialchars($cellData);
             $cellData .= " 2016";
             $date =  date('Y/m/d', strtotime($cellData));
             if ($rowCounter == 3) {
@@ -226,6 +305,7 @@ foreach(($table->find('tr')) as $row) {
             $cellSQL .= ",'".trim(substr($cellData, -3))."'";
           } elseif ($cellCounter == 2) {
             preg_match('~>(.*?)<~', $cellData, $output);
+            echo "<br>Output 1: ".$output[1];
             if ($output[1] == "W") {
               $cellSQL .= ",'1',";
             } else {
@@ -248,11 +328,11 @@ foreach(($table->find('tr')) as $row) {
     //See if this players game has already been recorded in pitcher_stats
     $sql4 = "SELECT count(*) as p_count FROM pitcher_stats WHERE player_id = '$playerID' AND game_date = '$date'";
     if ($date !== 0 && $skipNextRow == 0) {
-      $res = $mysqli->query($sql4);
-      $res->data_seek(0);
-      while ($row = $res->fetch_assoc()) {
-        $pCount = $row['p_count'];
-      }
+      // $res = $mysqli->query($sql4);
+      // $res->data_seek(0);
+      // while ($row = $res->fetch_assoc()) {
+      //   $pCount = $row['p_count'];
+      // }
       if ($pCount == 0) {
         $sql3 .= $cellSQL;
         $runSQL = 1;
@@ -272,18 +352,18 @@ foreach(($table->find('tr')) as $row) {
 }
 //Input new game stats into pitcher_stats table
 if ($runSQL == 1) {
-  $res = $mysqli->query($sql3);
+  // $res = $mysqli->query($sql3);
   $newRecords++;
 }
 $updateCount++;
 //Send updates while script is running
 $i++;
-if($i %20 == 0) {
+if($i %1 == 0) {
 send_message($startTime, $i, $updateCount . ' of '.$rec_count, round(($updateCount / $rec_count) * 100 ,2).'%');
 }
 //Set refrehsed_on date for the newlyupdated player
 $sql5 = "UPDATE players SET `refreshed_on` = curdate() WHERE `player_id` = $playerID ";
-$res = $mysqli->query($sql5);
+// $res = $mysqli->query($sql5);
 $y++;
 $step++;
 }

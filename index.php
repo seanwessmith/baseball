@@ -33,22 +33,22 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9692";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9712";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
 $csv_link   = NULL;
 $oldCSVLink = NULL;
 $new_csv    = 0;
-$sql0 = "UPDATE dk_csv SET active = '0'";
-$res = $mysqli->query($sql0);
 $sql0 = "SELECT url FROM dk_csv WHERE url = '$csvLink'";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 if ($res !== 0) {
-while ($row = $res->fetch_assoc()) {
-	$oldCSVLink = $row['url'];
-}
+  while ($row = $res->fetch_assoc()) {
+	  $oldCSVLink = $row['url'];
+  }
+	$sql0 = "UPDATE dk_csv SET active = '0'";
+	$res = $mysqli->query($sql0);
 }
 
 ////Add csv url to the dk_csv table if not there already
@@ -493,7 +493,7 @@ $y++;
 
 <div class="row padme">
 	<div id="box1" class="col-md-8 box center">
-<input class="btn btn-transparent" target="_blank" name="opponent_team" value="Opponent team" />
+<input class="btn btn-transparent" target="_blank" name="opponent_team" value="Opponent team" onclick="window.open('./php/test2.php')"/>
 		</div>
 </div>
 

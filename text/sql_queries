@@ -4,16 +4,27 @@ SELECT players.player_id FROM bASeball_1461521597, players WHERE players.player_
 ## SELECT Players not in mASter databASe but in dk.csv
 SELECT a.* FROM dk_main a LEFT JOIN players b on a.name = b.player_name WHERE b.player_name IS NULL AND a.position like '%P%'
 
-## SELECT real total points for each Pitchers
-UPDATE `pitcher_stats` SET `total_score`= ((`innings_pitched`*2.25)+(`strikeouts`*2)+(`win_result`*4)+(`earned_runs`*-2)+(`hits`*-.6)+(`walks`*-.6))
+
+                                             *********Real_total Points*********
+
+## SELECT real total points for each Pitcher
+UPDATE `pitcher_stats` JOIN players on players.player_id = pitcher_stats.player_id SET `total_score`= ((`innings_pitched`*2.25)+(`strikeouts`*2)+(`win_result`*4)+(`earned_runs`*-2)+(`hits`*-.6)+(`walks`*-.6)) WHERE players.position like '%P%'
+
+## SELECT real total points for each non-pitcher
+UPDATE `pitcher_stats` JOIN players on players.player_id = pitcher_stats.player_id  SET `total_score`= (((`hits`-`double_hit`-`triple_hit`)*3)+(`double_hit`*5)+(`triple_hit`*8)+(`home_runs`*10)+(`rbi`*2.25)+(`runs`*2.25)+(`walks`*2)+(`rbi`*2.25)+(`stolen_bases`*5)) WHERE players.position NOT LIKE '%P%'
+
+## SELECT average real total points for all players
+SELECT player_name, position, round(a.total_sum/a.game_count) AS average_total_points FROM players, (SELECT COUNT(*) AS game_count, player_id, SUM(total_score) AS total_sum FROM pitcher_stats GROUP BY player_id) a WHERE players.player_id = a.player_id
+
+
+                                             ************************************
+
 
 ## SELECT points, salary, total_points FROM all tables
-SELECT sum(total_score), player_name, dk_detail.salary, dk_detail.points FROM players, pitcher_stats, dk_detail, dk_main WHERE players.player_id = pitcher_stats.player_id AND dk_detail.player_id = dk_main.player_id AND dk_main.name = players.player_name GROUP BY player_name
-ORDER BY `dk_detail`.`salary`  DESC
+SELECT sum(total_score), player_name, dk_detail.salary, dk_detail.points FROM players, pitcher_stats, dk_detail, dk_main WHERE players.player_id = pitcher_stats.player_id AND dk_detail.player_id = dk_main.player_id AND dk_main.name = players.player_name GROUP BY player_name ORDER BY `dk_detail`.`salary`  DESC
 
 ## SELECT average points FROM dk_csv
-SELECT name, points, dk_main.player_id,  (sum(points) / count(*)) AS average_points, (MAX(points) - MIN(points)) AS points_differance FROM dk_detail, dk_main WHERE dk_main.player_id = dk_detail.player_id GROUP BY dk_detail.player_id
-ORDER BY `points_differance`  DESC
+SELECT name, points, dk_main.player_id,  (sum(points) / count(*)) AS average_points, (MAX(points) - MIN(points)) AS points_differance FROM dk_detail, dk_main WHERE dk_main.player_id = dk_detail.player_id GROUP BY dk_detail.player_id ORDER BY `points_differance`  DESC
 
 ## SELECT duplicate pitcher_stats
 SELECT player_id, game_date, count(*) FROM `pitcher_stats` GROUP BY game_date, player_id ORDER BY count(*) DESC
@@ -23,6 +34,7 @@ SELECT sum(total_score), player_name, position, team FROM pitcher_stats, players
 
 ## SELECT total points per team FROM dk_detail
 SELECT (sum(a.points)/count(*)) AS avg_sum ,count(*) AS player_count, sum(a.points) AS point_sum, a.team FROM (SELECT max(points) AS points, team FROM dk_detail, dk_main WHERE dk_detail.player_id = dk_main.player_id AND position NOT LIKE '%P%' GROUP BY dk_main.player_id) a GROUP BY team ORDER BY point_sum DESC
+
 
                                              *********DELETION STATEMENTS*********
 

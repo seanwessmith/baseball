@@ -35,11 +35,13 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 ////Update the probable players for the day////
-//Grab HTML page used to grep ESPN number
+//Grab HTML page used to grab probable players from ESPN
 $html = file_get_html('http://espn.go.com/fantasy/baseball/story/_/page/mlb_dailylineups');
 
+////Reset all players probability to 0
 $sql0 = "UPDATE dk_main SET probable = 0";
 $res = $mysqli->query($sql0);
+
 //Test to see if page has player name; if so echo ESPN number.
 $link = array();
 $big_table = $html->find('table[class="inline-table"] thead tr th');
@@ -64,11 +66,14 @@ foreach($big_table as $table) {
 	    }
 	  }
     ////END update the probable players////
+		send_message($startTime, $i, "Updated all probable players for the day. ", '100%');
 
     ////Update the team's opponents for the day////
     $teams = array();
     $sql0 = "SELECT * FROM team";
     $res = $mysqli->query($sql0);
+		$sql1 = "UPDATE team SET opponent = NULL"
+		$res = $mysqli->query($sql1);
     $res->data_seek(0);
       while ($row = $res->fetch_assoc()) {
         $teams[$row['team_name']] = $row['nickname'];
@@ -101,6 +106,7 @@ foreach($big_table as $table) {
     }
     }
     ////END the teams opponents////
+		send_message($startTime, $i, "Updated all teams and opponents for the day. ", '100%');
 
 ////INPUT: SELECT statement that selects players needing updating////
 $sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY player_id DESC";

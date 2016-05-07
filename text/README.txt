@@ -21,7 +21,7 @@ Accomplishments:
 Future Additions:
 
 ************IN PROGRESS************
-
+x. https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9716 - Doesn't generate the best lineup???
 ***********************************
 
 x. Grab opponents difficulty for pitchers

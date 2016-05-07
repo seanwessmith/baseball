@@ -15,7 +15,9 @@ Accomplishments:
 
 3. Currently have game data for 166/263 pitchers in DraftKings CSV sheet.
 
-4. Can run index.php to build the best team given a given salary and player points. Need to improve how players are rated, "The Master Algorithm".
+4. Can run index.php to build the best team given a given salary and player points.
+
+5. Calculated average hitting points and pitching points against a team
 
 ------------------------------------------------------------------------------------------------------------------------------------------------
 Future Additions:
@@ -24,7 +26,7 @@ Future Additions:
 x. https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9716 - Doesn't generate the best lineup???
 ***********************************
 
-x. Grab opponents difficulty for pitchers
+x.
 
 x. Add options to index.php that toggle team building algorithms
     x. opponent team plus or minus

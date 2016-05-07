@@ -16,6 +16,8 @@ UPDATE `pitcher_stats` JOIN players on players.player_id = pitcher_stats.player_
 ## SELECT average real total points for all players
 SELECT player_name, position, round(a.total_sum/a.game_count) AS average_total_points FROM players, (SELECT COUNT(*) AS game_count, player_id, SUM(total_score) AS total_sum FROM pitcher_stats GROUP BY player_id) a WHERE players.player_id = a.player_id
 
+## Select average total points for pitcher verse opponent
+SELECT ((sum(total_score))/count(*)) as average_point, sum(total_score) AS points, count(*) as game_count, opponent FROM players, pitcher_stats WHERE players.player_id = pitcher_stats.player_id AND position LIKE '%P%' GROUP BY pitcher_stats.opponent ORDER BY `average_point` DESC
 
                                              ************************************
 
@@ -33,8 +35,7 @@ SELECT player_id, game_date, count(*) FROM `pitcher_stats` GROUP BY game_date, p
 SELECT sum(total_score), player_name, position, team FROM pitcher_stats, players WHERE players.player_id = pitcher_stats.player_id GROUP BY players.player_id ORDER BY team
 
 ## SELECT total points per team FROM dk_detail
-SELECT (sum(a.points)/count(*)) AS avg_sum ,count(*) AS player_count, sum(a.points) AS point_sum, a.team FROM (SELECT max(points) AS points, team FROM dk_detail, dk_main WHERE dk_detail.player_id = dk_main.player_id AND position NOT LIKE '%P%' GROUP BY dk_main.player_id) a GROUP BY team ORDER BY point_sum DESC
-
+SELECT (a.points/count(*)) AS avg_sum ,count(*) AS player_count, sum(a.points) AS point_sum, a.team FROM (SELECT sum(points) AS points, team FROM dk_detail, dk_main WHERE dk_detail.player_id = dk_main.player_id AND position NOT LIKE '%P%'  GROUP BY dk_main.player_id) a GROUP BY team ORDER BY `avg_sum`  DESC
 
                                              *********DELETION STATEMENTS*********
 

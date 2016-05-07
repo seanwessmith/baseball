@@ -24,6 +24,8 @@ Future Additions:
 
 ***********************************
 
+x. Grab opponents difficulty for pitchers
+
 x. Add options to index.php that toggle team building algorithms
     x. opponent team plus or minus
     x. home or away plus or minus

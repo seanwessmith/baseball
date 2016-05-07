@@ -36,33 +36,33 @@ if ($mysqli->connect_errno) {
 
 ////Update the probable players for the day////
 //Grab HTML page used to grep ESPN number
-$html = file_get_html('http://www.baseballpress.com/lineups');
+$html = file_get_html('http://espn.go.com/fantasy/baseball/story/_/page/mlb_dailylineups');
 
 $sql0 = "UPDATE dk_main SET probable = 0";
 $res = $mysqli->query($sql0);
 //Test to see if page has player name; if so echo ESPN number.
 $link = array();
-$bigDivs = $html->find('div.text');
-foreach($bigDivs as $div) {
-  $sql1 = "UPDATE dk_main SET probable = 1 WHERE name = ";
-    $link = $div->find('a');
+$big_table = $html->find('table[class="inline-table"] thead tr th');
+foreach($big_table as $table) {
+	$sql1 = "UPDATE dk_main SET probable = 1 WHERE name = ";
+    $link = $table->find('a');
     if (isset($link[0])) {
         $href = $link[0]->innertext;
         $sql1 .= "'".$href."'";
         $res = $mysqli->query($sql1);
     }
   }
-  $bigDivs = $html->find('div.players div');
-  foreach($bigDivs as $div) {
-    $sql1 = "UPDATE dk_main SET probable = 1 WHERE name = ";
-      $link = $div->find('<a[class="player-link]');
-      if (isset($link[0])) {
-          $href = $link[0]->innertext;
-          $sql1 .= "'".$href."'";
-          $res = $mysqli->query($sql1);
-      }
-
-    }
+	$link = array();
+	$big_table = $html->find('table[class="inline-table"] tbody tr td');
+	foreach($big_table as $table) {
+		$sql1 = "UPDATE dk_main SET probable = 1 WHERE name = ";
+	    $link = $table->find('a');
+	    if (isset($link[0])) {
+	        $href = $link[0]->innertext;
+	        $sql1 .= "'".$href."'";
+	        $res = $mysqli->query($sql1);
+	    }
+	  }
     ////END update the probable players////
 
     ////Update the team's opponents for the day////
@@ -101,7 +101,7 @@ foreach($bigDivs as $div) {
     }
     }
     ////END the teams opponents////
-/*
+
 ////INPUT: SELECT statement that selects players needing updating////
 $sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY player_id DESC";
 /////////////////////////////////////////////////////////////////////
@@ -489,5 +489,4 @@ foreach ($noTablePlayer as $key => $value) {
   echo $value;
 }
 send_message($startTime,'CLOSE', 'Process complete', '100%');
-*/
 ?>

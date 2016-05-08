@@ -66,18 +66,18 @@ foreach($big_table as $table) {
 	    }
 	  }
     ////END update the probable players////
-		send_message($startTime, $i, "Updated all probable players for the day. ", '100%');
+		send_message($startTime, "DONE", "Updated all probable players for the day. ", '100%');
 
     ////Update the team's opponents for the day////
     $teams = array();
-    $sql0 = "SELECT * FROM team";
-    $res = $mysqli->query($sql0);
-		$sql1 = "UPDATE team SET opponent = NULL"
-		$res = $mysqli->query($sql1);
+    $sql0  = "SELECT * FROM team";
+    $res   = $mysqli->query($sql0);
     $res->data_seek(0);
       while ($row = $res->fetch_assoc()) {
         $teams[$row['team_name']] = $row['nickname'];
       }
+		$sql1  = "UPDATE team SET opponent = NULL";
+		$res   = $mysqli->query($sql1);
       foreach ($teams as $key => $value) {
     //Grab HTML page used to grep ESPN number
     $html = file_get_html('http://espn.go.com/mlb/team/schedule/_/name/'.$value);
@@ -93,9 +93,11 @@ foreach($big_table as $table) {
         }
       }
       if ($found == 1) {
+
         ////Grab the games location
         $list = $div->find('li[class=game-status]');
         $location = $list[0]->innertext;
+
         ////Grab the opposing team
         $list2 = $div->find('li[class=team-name]');
         $href = $list2[0]->find('a');
@@ -105,8 +107,9 @@ foreach($big_table as $table) {
     }
     }
     }
+
     ////END the teams opponents////
-		send_message($startTime, $i, "Updated all teams and opponents for the day. ", '100%');
+		send_message($startTime, "DONE", "Updated all teams and opponents for the day. ", '100%');
 
 ////INPUT: SELECT statement that selects players needing updating////
 $sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY player_id DESC";

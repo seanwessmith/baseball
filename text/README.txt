@@ -26,8 +26,6 @@ Future Additions:
 x. https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9716 - Doesn't generate the best lineup???
 ***********************************
 
-x.
-
 x. Add options to index.php that toggle team building algorithms
     x. opponent team plus or minus
     x. home or away plus or minus

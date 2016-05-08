@@ -18,6 +18,12 @@
 	        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 	    <![endif]-->
 	<title>Fantasy Baseball Quant</title>
+	<style>
+	img.two {
+    height: auto;
+    width: 90%;
+}
+</style>
 </head>
 <body>
 
@@ -33,7 +39,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9702";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9718";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -412,9 +418,17 @@ $y++;
 <table class="table table-hover">
   <tbody>
   <tr>
-  <td><strong>Position</strong</td> <td><strong>Name</strong</td> <td><strong>Salary</strong></td><td><strong>Points</strong></td>
+  <td><strong>Team</strong></td><td><strong>Position</strong></td><td><strong>Name</strong></td> <td><strong>Salary</strong></td><td><strong>Points</strong></td><td><strong>Opponent</strong></td><td><strong>Difficulty</strong></td>
   </tr>
 	<?php
+
+	$sql7 = "SELECT (SUM(pitching_strength)/count(*)) AS avg_pitch_strength, (SUM(hitting_strength)/count(*)) AS avg_hit_strength FROM team";
+	$res = $mysqli->query($sql7);
+	$res->data_seek(0);
+	while ($row    = $res->fetch_assoc()) {
+	$avg_hit_strength    = $row['avg_hit_strength'];
+	$avg_pitch_strength  = ($row['avg_pitch_strength']);
+	}
 
 	$allSalary = array();
 	foreach ($best_team as $key3 => $value3) {
@@ -439,8 +453,7 @@ $y++;
 	$points   = null;
 
 	$y = 0;
-	foreach($best_team as $key=>$value)
-	{
+	foreach ($best_team as $key=>$value) {
 		//set the key to a value if matched
 		if ((substr($key, -2)) == '_t') {
 			$position = $value;
@@ -457,7 +470,26 @@ $y++;
 
 	//each player has 6 attributes, $y waits until all 6 attributes are grabbed to print table
 	if ($position != null && $name != null && $salary != null && $points != null) {
-		echo "<tr><td>";
+
+		////Grab the opposing teams difficulty for that position
+		//Example: Grab how many points a pitcher averages against the opposing team
+		if (strpos($position, 'P') == true) {
+		$sql6 = "SELECT nickname, pitching_strength AS relative_diff, pitcher_stats.opponent FROM team, players, pitcher_stats WHERE players.team = team.team_name AND players.player_id = pitcher_stats.player_id AND players.player_name = '".$name."'";
+	  } else {
+		$sql6 = "SELECT nickname, hitting_strength AS relative_diff, pitcher_stats.opponent FROM team, players, pitcher_stats WHERE players.team = team.team_name AND players.player_id = pitcher_stats.player_id AND players.player_name = '".$name."'";
+	  }
+		$res = $mysqli->query($sql6);
+		$res->data_seek(0);
+		while ($row    = $res->fetch_assoc()) {
+		$difficulty    = $row['relative_diff'];
+		$team_nickname = strtoupper($row['nickname']);
+		$opponent = strtoupper($row['opponent']);
+		}
+
+		echo "<tr><td style='width: 5%;'>";
+		?><img class="two" src="http://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/<?php echo $team_nickname;?>.png&amp;h=150&amp;w=150"><?php
+		echo "</td>";
+		echo "<td>";
 		echo $position;
 		echo "</td>";
 		echo "<td>";
@@ -468,6 +500,12 @@ $y++;
 		echo "</td>";
 		echo "<td>";
 		echo $points;
+		echo "</td>";
+		echo "<td>";
+		echo $opponent;
+		echo "</td>";
+		echo "<td>";
+		echo $difficulty;
 		echo "</td></tr>";
 
 		//reset values for next loop
@@ -481,9 +519,10 @@ $y++;
 		$y++;
 	}
 	 ?>
-  <tr><td><td><td><strong>Total Salary <?php echo $tot_sal; ?></strong></td><td><strong>Total Points: <?php echo $totPoints;?></strong></td><tr>
-	<td></td><td></td><td></td><td></td>
+  <tr><td><td><td><td><td><td><strong>Tot. Salary: <?php echo $tot_sal; ?></strong></td><td><strong>Tot. Points: <?php echo $totPoints;?></strong></td><tr>
+	<td></td><td></td><td></td><td></td><td></td><td></td><td></td>
 	</tr>
+	<tr>Average Hitting Strength: <?php echo $avg_hit_strength; ?> Average Pitching Strength: <?php echo $avg_pitch_strength; ?></tr>
 	<tr></tr>
 	</tbody>
 </table>

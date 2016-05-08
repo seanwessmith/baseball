@@ -1,0 +1,75 @@
+<html>
+<head>
+  <script>
+  .container {
+    overflow-y: scroll;
+    height: 115px;
+}
+
+table {
+    color: #fff;
+    width: 500px;
+    border-collapse: collapse;
+}
+
+table tr.expired {
+    position: relative;
+}
+
+table tr.expired td:first-child:before {
+    content: "";
+    position: absolute;
+    width: 500px;
+    height: 30px;
+    z-index: -100;
+    top: 0;
+    left: 0;
+    /*background: red;*/
+    background: url('http://a.espncdn.com/combiner/i?img=/i/headshots/mlb/players/full/30152.png&w=350&h=254');
+}
+
+table tr.expired td {
+    z-index: 100;
+    position: relative;
+    background: transparent !important;
+}
+
+table tr td {
+    padding: 5px;
+    background: #999;
+}
+
+table tr:nth-child(odd) td {
+    background: #ccc;
+}
+</script>
+</head>
+
+<div class="container">
+    <table>
+        <tr>
+            <td>Model</td>
+            <td>Make</td>
+            <td>Miles</td>
+            <td>Year</td>
+            <td>Options</td>
+            <td>Price</td>
+        </tr>
+        <tr class="expired">
+            <td>Model</td>
+            <td>Make</td>
+            <td>Miles</td>
+            <td>Year</td>
+            <td>Options</td>
+            <td>Price</td>
+        </tr>
+        <tr class="expired">
+            <td>Model</td>
+            <td>Make</td>
+            <td>Miles</td>
+            <td>Year</td>
+            <td>Options</td>
+            <td>Price</td>
+        </tr>
+    </table>
+</div>

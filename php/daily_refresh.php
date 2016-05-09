@@ -243,7 +243,9 @@ if ($generalStats != NULL) {
         $position = "1B";
       } elseif (strpos($position, 'Third')) {
         $position = "3B";
-      } elseif (strpos($position, 'Short')) {
+      } elseif ($position == "Short Stop") {
+        $position = "SS";
+      } elseif ($position == "Shortstop") {
         $position = "SS";
       } elseif ($position == "Starting Pitcher") {
         $position = "SP";
@@ -488,6 +490,20 @@ $sql7 = "UPDATE `pitcher_stats` JOIN players on players.player_id = pitcher_stat
          (`triple_hit`*8)+(`home_runs`*10)+(`rbi`*2.25)+(`runs`*2.25)+(`walks`*2)+
          (`rbi`*2.25)+(`stolen_bases`*5)) WHERE players.position NOT LIKE '%P%'";
 $res = $mysqli->query($sql7);
+
+////Update pitching points accumulated against a certain team
+//Higher points equates to an easy team to score hitting points against
+$sql8 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as hitting_strength_against_pitchers, opponent FROM players, pitcher_stats, (SELECT SUM(total_score)/count(*) AS average FROM pitcher_stats) a WHERE players.player_id = pitcher_stats.player_id AND position LIKE '%P%' GROUP BY pitcher_stats.opponent) a
+ON team.nickname = a.opponent
+SET team.hitting_strength = a.hitting_strength_against_pitchers";
+$res = $mysqli->query($sql8);
+
+////Update hitting points accumulated against a certain team
+//Higher points equates to an easy team to score pitchting points against
+$sql9 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as pitching_strength_against_hitters, opponent FROM players, pitcher_stats, (SELECT SUM(total_score)/count(*) AS average FROM pitcher_stats) a WHERE players.player_id = pitcher_stats.player_id AND position NOT LIKE '%P%' GROUP BY pitcher_stats.opponent) a
+ON team.nickname = a.opponent
+SET team.pitching_strength = a.pitching_strength_against_hitters";
+$res = $mysqli->query($sql9);
 
 $totalTime = time() - $startTime;
 echo " Total Time Taken: ".$totalTime;

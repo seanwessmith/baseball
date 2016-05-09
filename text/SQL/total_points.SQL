@@ -15,11 +15,14 @@ SELECT ((sum(total_score))/count(*)) as average_point, sum(total_score) AS point
 SELECT sum(total_score), player_name, position, team FROM pitcher_stats, players WHERE players.player_id = pitcher_stats.player_id GROUP BY players.player_id ORDER BY team
 
 ##Select pitching points accumulated against a certain team
-UPDATE team JOIN (SELECT ((sum(total_score))/count(*)) as hitting_strength_against_pitchers, opponent FROM players, pitcher_stats WHERE players.player_id = pitcher_stats.player_id AND position LIKE '%P%' GROUP BY pitcher_stats.opponent) a
+UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as hitting_strength_against_pitchers, opponent FROM players, pitcher_stats, (SELECT SUM(total_score)/count(*) AS average FROM pitcher_stats) a WHERE players.player_id = pitcher_stats.player_id AND position LIKE '%P%' GROUP BY pitcher_stats.opponent) a
 ON team.nickname = a.opponent
 SET team.hitting_strength = a.hitting_strength_against_pitchers
 
 ##Select hitting points accumulated against a certain team
-UPDATE team JOIN (SELECT ((sum(total_score))/count(*)) as pitching_strength_against_hitters, opponent FROM players, pitcher_stats WHERE players.player_id = pitcher_stats.player_id AND position NOT LIKE '%P%' GROUP BY pitcher_stats.opponent) a
+UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as pitching_strength_against_hitters, opponent FROM players, pitcher_stats, (SELECT SUM(total_score)/count(*) AS average FROM pitcher_stats) a WHERE players.player_id = pitcher_stats.player_id AND position NOT LIKE '%P%' GROUP BY pitcher_stats.opponent) a
 ON team.nickname = a.opponent
 SET team.pitching_strength = a.pitching_strength_against_hitters
+
+####difficulty correlation to total_score ANSWER: R = .0005  (No Correlation)
+SELECT (SUM((total_score - tot_mean) + (pitching_strength - pitch_mean)) / SQRT(((total_score - tot_mean)*(total_score - tot_mean)) * ((pitching_strength - pitch_mean)*(pitching_strength - pitch_mean)))) FROM players, pitcher_stats, team, (SELECT sum(total_score)/count(*) as tot_mean, sum(pitching_strength)/count(*) as pitch_mean FROM players, pitcher_stats, team WHERE team.nickname = pitcher_stats.opponent AND total_score <> 0 AND pitcher_stats.player_id = players.player_id AND players.position like '%P%') a WHERE team.nickname = pitcher_stats.opponent AND total_score <> 0 AND pitcher_stats.player_id = players.player_id AND players.position like '%P%'

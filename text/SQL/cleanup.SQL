@@ -1,7 +1,7 @@
-## SELECT Players FROM mASter databASe and connect to dk.csv || 263 Pitchers should be total
-SELECT players.player_id FROM bASeball_1461521597, players WHERE players.player_name = bASeball_1461521597.name GROUP BY players.player_id
+## SELECT Players FROM dk_main and connect to players
+SELECT players.player_id FROM dk_main, players WHERE players.player_name = dk_main.name GROUP BY players.player_id
 
-## SELECT Players not in mASter databASe but in dk.csv
+## SELECT Players not in players but in dk_main
 SELECT a.* FROM dk_main a LEFT JOIN players b on a.name = b.player_name WHERE b.player_name IS NULL AND a.position like '%P%'
 
 ## SELECT duplicate pitcher_stats

@@ -10,4 +10,4 @@ The Master Algorithm- Insights
 	a. Perceptron algorithm
 	b. Backpropagation algorithm (108)
 
-4.
+4. Bayes' Theorem 

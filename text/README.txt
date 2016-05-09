@@ -2,9 +2,8 @@ How to Run:
 
 index.php - Shows the best team given the salary cap
 
-p_espn_id - grabs players in dk_main that aren't in players and adds them to players complete with their ESPN id
-p_update  - updates players already in the players database
-p_unknown - fetches the ESPN_ID of a player from the DraftKings CSV sheet
+1. find_unknown      - Run this first to add new players from dk_main.
+2. daily_refresh  - Updates players already in the players database. Also run after running
 
 
 Accomplishments:

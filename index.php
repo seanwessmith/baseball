@@ -39,7 +39,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9718";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9731";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -496,7 +496,7 @@ $y++;
 		echo $name;
 		echo "</td>";
 		echo "<td>";
-		echo $salary;
+		echo number_format($salary);
 		echo "</td>";
 		echo "<td>";
 		echo $points;
@@ -519,7 +519,7 @@ $y++;
 		$y++;
 	}
 	 ?>
-  <tr><td><td><td><td><td><td><strong>Tot. Salary: <?php echo $tot_sal; ?></strong></td><td><strong>Tot. Points: <?php echo $totPoints;?></strong></td><tr>
+  <tr><td><strong>Totals: <strong><td><td><td><strong>$<?php echo number_format($tot_sal); ?></strong></td><td><strong><?php echo $totPoints;?> Points</strong></td><td><td><tr>
 	<td></td><td></td><td></td><td></td><td></td><td></td><td></td>
 	</tr>
 	<tr>Average Hitting Strength: <?php echo $avg_hit_strength; ?> Average Pitching Strength: <?php echo $avg_pitch_strength; ?></tr>

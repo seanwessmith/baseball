@@ -22,8 +22,10 @@ Accomplishments:
 Future Additions:
 
 ************IN PROGRESS************
-x. https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9716 - Doesn't generate the best lineup???
+
 ***********************************
+
+x. Find std deviation before and after applying opponent difficulty to total_score
 
 x. Add options to index.php that toggle team building algorithms
     x. opponent team plus or minus

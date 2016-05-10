@@ -1,8 +1,5 @@
-## SELECT Players FROM dk_main and connect to players
-SELECT players.player_id FROM dk_main, players WHERE players.player_name = dk_main.name GROUP BY players.player_id
-
-## SELECT Players not in players but in dk_main
-SELECT a.* FROM dk_main a LEFT JOIN players b on a.name = b.player_name WHERE b.player_name IS NULL AND a.position like '%P%'
+## SELECT Players not in players but in dk_main, if so run find_unknown.php
+SELECT a.* FROM dk_main a LEFT JOIN players b on a.name = b.player_name WHERE b.player_name IS NULL
 
 ## SELECT duplicate pitcher_stats
 SELECT player_id, game_date, count(*) FROM `pitcher_stats` GROUP BY game_date, player_id ORDER BY count(*) DESC

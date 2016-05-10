@@ -39,7 +39,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9731";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9734";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;

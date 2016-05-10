@@ -41,7 +41,7 @@ $rec_count = $row['rec_count'];
 
 //Cycle through 1 player
 $i = 0;
-for ($y = 0; $y < 1;) {
+for ($y = 0; $y < $rec_count;) {
 $sql1 = "SELECT a.* FROM dk_main a LEFT JOIN players b on a.name = b.player_name
          WHERE b.player_name IS NULL LIMIT 0,1";
 $res = $mysqli->query($sql1);
@@ -53,27 +53,20 @@ while ($row = $res->fetch_assoc()) {
 //Get player name ready for URL
 $encodedPlayer = urlencode($unmatchedPlayer);
 $hrefPlayer = strtolower(str_replace(' ', '\-', $unmatchedPlayer));
-echo "<br>Href Name: ".$hrefPlayer;
 //Get player name ready for SQL
 $name = str_replace('\'', '\\\'', $unmatchedPlayer);
 //Grab HTML page used to grep ESPN number
 $html = file_get_html('https://www.google.com/search?safe=off&site=&source=hp&q='.$encodedPlayer.'+espn+mlb');
-echo "<br>Encoded Name: ".$encodedPlayer;
 //Test to see if page has player name; if so echo ESPN number.
 $bigDivs = $html->find('h3.r');
 foreach($bigDivs as $div) {
     $link = $div->find('a');
     $href = $link[0]->href;
     $pattern = '#(?<=id/)[^/'.$hrefPlayer.']+#';
-    echo "<pre>";
-    echo "<br>Pattern: ".$pattern;
-    echo "<br>Href".$href;
-    echo "</pre>";
     preg_match($pattern,$href, $espnID);
     if ($espnID[0] !== NULL){
       //Insert Player Name and ESPN ID into players table
       $sql0 = "INSERT INTO `players`(`espn_id`, `player_name`,`added_on`) VALUES ('$espnID[0]','$name',curdate())";
-      echo "<br>".$sql0;
       $mysqli->query($sql0);
       break;
     }

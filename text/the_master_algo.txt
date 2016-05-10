@@ -11,3 +11,5 @@ The Master Algorithm- Insights
 	b. Backpropagation algorithm (108)
 
 4. Bayes' Theorem 
+
+5. Nearest Neighbor (p. 186)

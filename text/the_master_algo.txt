@@ -13,3 +13,5 @@ The Master Algorithm- Insights
 4. Bayes' Theorem 
 
 5. Nearest Neighbor (p. 186)
+
+6. Support Vector Machines (p. 190)

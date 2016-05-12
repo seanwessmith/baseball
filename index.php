@@ -21,7 +21,7 @@
 	<style>
 	img.two {
     height: auto;
-    width: 90%;
+    width: 70%;
 }
 </style>
 </head>
@@ -87,7 +87,7 @@ array_pop($csvArray);
 ///////////////////////////////////////////////////////////////
 
 ////Part 1 of 3 for the SQL statement
-$sql2 = "INSERT INTO dk_main (`name`, `position`, `team`, `added_on`) VALUES ";
+$sql2 = "INSERT INTO player (`name`, `position`, `team`, `added_on`) VALUES ";
 ////Part 2 of 3 for the SQL statment
 $i = 0;
 foreach ($csvArray as $array){
@@ -112,7 +112,7 @@ $res = $mysqli->query($sql2);
 ////Grab the player_id from dk_main and push onto the csvArray
 foreach ($csvArray as $key => &$array){
 	$name = str_replace("'","''", $array[1]);
-	  $sql3 = "SELECT player_id FROM dk_main WHERE `name` = '".$name."'";
+	  $sql3 = "SELECT player_id FROM players WHERE player_name = '".$name."'";
 		$res = $mysqli->query($sql3);
 		$res->data_seek(0);
 		if ($res !== 0) {
@@ -137,15 +137,20 @@ foreach ($csvArray as $array){
 }
 	if ($i == 0) {
 		$sql4 .= "('".$player_id."', '".$salary."', '".$points."', '".$value."','".$csv_id."', curdate())";
-
 	} else {
     $sql4 .= ", ('".$player_id."', '".$salary."', '".$points."','".$value."','".$csv_id."', curdate())";
 	}
 	$i = 1;
 }
-$res = $mysqli->query($sql4);
-}
+$mysqli->query($sql4);
 
+////Update players.value
+$sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
+$mysqli->query($sql10);
+}
+$sql8 = "UPDATE players JOIN (SELECT salary, player_id, MAX(added_on) FROM dk_detail GROUP BY player_id) a
+				 ON a.player_id = players.player_id SET players.salary = a.salary";
+$mysqli->query($sql8);
 ?>
 
 <!-- Navigation Bar -->
@@ -246,9 +251,15 @@ $res = $mysqli->query($sql4);
 ////BEGIN: Build Team Loop - adds players to the team starting with the highest value players////
 
 ////Base SQL statement
-$sqlSelect = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
-			   FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
-				 AND dk_detail.player_id = dk_main.player_id AND dk_detail.points > 0 AND dk_main.probable = '1'";
+////OLD////
+// $sqlSelect = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
+// 			   FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
+// 				 AND dk_detail.player_id = dk_main.player_id AND dk_detail.points > 0 AND dk_main.probable = '1'";
+
+////NEW////
+$sqlSelect = "SELECT players.player_id, players.player_name, players.position, players.salary, players.value, players.points
+							FROM players , dk_detail, dk_csv WHERE dk_csv.csv_id = dk_detail.csv_id AND dk_detail.player_id = players.player_id
+							AND dk_csv.active = 1 AND players.points > 0 AND players.probable = '1'";
 
 //Grab record count from base SQL statement
 $sql = "SELECT count(*) AS rec_count FROM ($sqlSelect) a";
@@ -265,6 +276,7 @@ $no_new_players = 0;
 $step           = 0;
 //                   BEGIN loop                 //
 for ($no_new_players = 0; $no_new_players < 1;) {
+	flush();
 
 	//Get list of keys from all players on $best_team//
 	$keys = null;
@@ -306,7 +318,7 @@ foreach ($best_team as $key4 => $value4) {
 }
 ////If best_team has players, set SQL to select different players////
 if ($best_team_id !== NULL) {
-  $best_team_id = "AND dk_main.player_id NOT IN (".$best_team_id.")";
+  $best_team_id = "AND players.player_id NOT IN (".$best_team_id.")";
 }
 ////Build final SQL statement////
 $sql0 = "$sqlSelect $best_team_id ORDER BY $order_by LIMIT $var,1";
@@ -319,13 +331,28 @@ while ($row = $res->fetch_assoc()) {
 	$t_salkey     = NULL;
 	$t_position   = NULL;
 	$t_points     = NULL;
-	$t_points = $row['points'];
-	$t_name = $row['name'];
+	$t_points   = $row['points'];
+	$t_name     = $row['player_name'];
 	$t_position = $row['position'];
-	$t_salkey = floatval($row['player_id']);
-	$t_salary = floatval($row['salary']);
-	$t_value = $row['value'];
+	$t_salkey   = floatval($row['player_id']);
+	$t_salary   = floatval($row['salary']);
+	$t_value    = $row['value'];
 }
+
+////Account for opponents difficulty rating////
+if (strpos($t_position, 'P') == true) {
+$sql6 = "SELECT pitching_strength AS relative_diff, pitcher_stats.opponent FROM team, players, pitcher_stats WHERE players.team = team.team_name AND players.player_id = pitcher_stats.player_id AND players.player_name = '".$t_name."'";
+} else {
+$sql6 = "SELECT hitting_strength AS relative_diff, pitcher_stats.opponent FROM team, players, pitcher_stats WHERE players.team = team.team_name AND players.player_id = pitcher_stats.player_id AND players.player_name = '".$t_name."'";
+}
+$res = $mysqli->query($sql6);
+$res->data_seek(0);
+while ($row    = $res->fetch_assoc()) {
+$difficulty    = $row['relative_diff'];
+}
+$t_points   = $t_points + $difficulty;
+$t_value    = $t_points/$t_salary*100000;
+/////////////////////////////////////////////
 
 	////Replace MYSQL position with new Position////
 	$positionArray = array("SP"=>"p0", "RP"=>"p0", "C"=>"c0", "1B"=>"f0", "2B"=>"s0", "3B"=>"t0", "SS"=>"ss", "OF"=>"o0");
@@ -522,7 +549,6 @@ $y++;
   <tr><td><strong>Totals: <strong><td><td><td><strong>$<?php echo number_format($tot_sal); ?></strong></td><td><strong><?php echo $totPoints;?> Points</strong></td><td><td><tr>
 	<td></td><td></td><td></td><td></td><td></td><td></td><td></td>
 	</tr>
-	<tr>Average Hitting Strength: <?php echo $avg_hit_strength; ?> Average Pitching Strength: <?php echo $avg_pitch_strength; ?></tr>
 	<tr></tr>
 	</tbody>
 </table>

@@ -507,14 +507,20 @@ $res = $mysqli->query($sql7);
 $sql8 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as hitting_strength_against_pitchers, opponent FROM players, pitcher_stats, (SELECT SUM(total_score)/count(*) AS average FROM pitcher_stats) a WHERE players.player_id = pitcher_stats.player_id AND position LIKE '%P%' GROUP BY pitcher_stats.opponent) a
 ON team.nickname = a.opponent
 SET team.hitting_strength = a.hitting_strength_against_pitchers";
-$res = $mysqli->query($sql8);
+$mysqli->query($sql8);
 
 ////Update hitting points accumulated against a certain team
 //Higher points equates to an easy team to score pitchting points against
 $sql9 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as pitching_strength_against_hitters, opponent FROM players, pitcher_stats, (SELECT SUM(total_score)/count(*) AS average FROM pitcher_stats) a WHERE players.player_id = pitcher_stats.player_id AND position NOT LIKE '%P%' GROUP BY pitcher_stats.opponent) a
 ON team.nickname = a.opponent
 SET team.pitching_strength = a.pitching_strength_against_hitters";
-$res = $mysqli->query($sql9);
+$mysqli->query($sql9);
+
+$sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
+$mysqli->query($sql10);
+
+$sql11 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.points = a.points";
+$mysqli->query($sql11);
 
 $totalTime = time() - $startTime;
 echo " Total Time Taken: ".$totalTime;

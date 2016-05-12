@@ -26,26 +26,20 @@ Future Additions:
 x. Merge dk_main with players
 ***********************************
 
-x. Don't update players.player_name after adding from dk_main
-
-x. Find std deviation before and after applying opponent difficulty to total_score
-
 x. Add options to index.php that toggle team building algorithms
     x. opponent team plus or minus
     x. home or away plus or minus
 
-x. Navigate DraftKings and submit drafts automatically
+x. Don't update players.player_name after adding from dk_main
 
-x. Only show probable pitchers in index.php (http://mlb.mlb.com/news/probable_pitchers/)
+x. Find std deviation before and after applying opponent difficulty to total_score
+
+x. Navigate DraftKings and submit drafts automatically
 
 x. Need to have cron job that runs p_update.php daily
 
-x. Implement a queue to process large updates faster
+x. Send updates using jquery while running large processes: http://stackoverflow.com/questions/9152373/php-flushing-while-loop-data-with-ajax
 
 x. Upload to AWS
-
-x. Add cron job to refresh database from this link, needs to reference a schedule so it refreshes only updated teams.
-   https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=21&draftGroupId=8129
-
 
 543

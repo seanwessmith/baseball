@@ -18,12 +18,15 @@ Accomplishments:
 
 5. Calculated average hitting points and pitching points against a team
 
+
 ------------------------------------------------------------------------------------------------------------------------------------------------
 Future Additions:
 
 ************IN PROGRESS************
-
+x. Merge dk_main with players
 ***********************************
+
+x. Don't update players.player_name after adding from dk_main
 
 x. Find std deviation before and after applying opponent difficulty to total_score
 

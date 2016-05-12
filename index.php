@@ -39,7 +39,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9734";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9719";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -522,7 +522,6 @@ $y++;
   <tr><td><strong>Totals: <strong><td><td><td><strong>$<?php echo number_format($tot_sal); ?></strong></td><td><strong><?php echo $totPoints;?> Points</strong></td><td><td><tr>
 	<td></td><td></td><td></td><td></td><td></td><td></td><td></td>
 	</tr>
-	<tr>Average Hitting Strength: <?php echo $avg_hit_strength; ?> Average Pitching Strength: <?php echo $avg_pitch_strength; ?></tr>
 	<tr></tr>
 	</tbody>
 </table>

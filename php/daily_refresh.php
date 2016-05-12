@@ -39,34 +39,45 @@ if ($mysqli->connect_errno) {
 $html = file_get_html('http://espn.go.com/fantasy/baseball/story/_/page/mlb_dailylineups');
 
 ////Reset all players probability to 0
-$sql0 = "UPDATE dk_main SET probable = 0";
+$sql0 = "UPDATE players SET probable = 0";
 $res = $mysqli->query($sql0);
+$probable_count = 0;
 
-//Test to see if page has player name; if so echo ESPN number.
+//Grab pitchers
 $link = array();
 $big_table = $html->find('table[class="inline-table"] thead tr th');
 foreach($big_table as $table) {
-	$sql1 = "UPDATE dk_main SET probable = 1 WHERE name = ";
+	$sql1 = "UPDATE players SET probable = 1 WHERE player_name = ";
+  $sql2 = "INSERT INTO probable_player_history (player_name, game_date) VALUES (";
     $link = $table->find('a');
     if (isset($link[0])) {
         $href = $link[0]->innertext;
         $sql1 .= "'".$href."'";
+        $sql2 .= "'".$href."', curdate()) ON DUPLICATE KEY UPDATE player_name = '".$href."', game_date = curdate()";
+        $probable_count++;
         $res = $mysqli->query($sql1);
+        $res = $mysqli->query($sql2);
     }
   }
+  ////Grab non-pitchers
 	$link = array();
 	$big_table = $html->find('table[class="inline-table"] tbody tr td');
 	foreach($big_table as $table) {
-		$sql1 = "UPDATE dk_main SET probable = 1 WHERE name = ";
+		$sql1 = "UPDATE players SET probable = 1 WHERE player_name = ";
+    $sql2 = "INSERT INTO probable_player_history (player_name, game_date) VALUES (";
 	    $link = $table->find('a');
 	    if (isset($link[0])) {
 	        $href = $link[0]->innertext;
 	        $sql1 .= "'".$href."'";
-	        $res = $mysqli->query($sql1);
+          $sql2 .= "'".$href."', curdate()) ON DUPLICATE KEY UPDATE player_name = '".$href."', game_date = curdate()";
+	        $probable_count++;
+          $res = $mysqli->query($sql1);
+          $res = $mysqli->query($sql2);
 	    }
 	  }
+
     ////END update the probable players////
-		send_message($startTime, "DONE", "Updated all probable players for the day. ", '100%');
+		send_message($startTime, "DONE", "Updated ".$probable_count." probable players for the day. ", '100%');
 
     ////Update the team's opponents for the day////
     $teams = array();

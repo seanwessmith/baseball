@@ -26,3 +26,10 @@ SET team.pitching_strength = a.pitching_strength_against_hitters
 
 ####difficulty correlation to total_score ANSWER: R = .0005  (No Correlation)
 SELECT (SUM((total_score - tot_mean) + (pitching_strength - pitch_mean)) / SQRT(((total_score - tot_mean)*(total_score - tot_mean)) * ((pitching_strength - pitch_mean)*(pitching_strength - pitch_mean)))) FROM players, pitcher_stats, team, (SELECT sum(total_score)/count(*) as tot_mean, sum(pitching_strength)/count(*) as pitch_mean FROM players, pitcher_stats, team WHERE team.nickname = pitcher_stats.opponent AND total_score <> 0 AND pitcher_stats.player_id = players.player_id AND players.position like '%P%') a WHERE team.nickname = pitcher_stats.opponent AND total_score <> 0 AND pitcher_stats.player_id = players.player_id AND players.position like '%P%'
+
+##Total value = (total_score / salary)* 10000
+UPDATE pitcher_stats JOIN (SELECT players.player_id, salary, MAX(dk_detail.added_on) FROM dk_main, dk_detail, players WHERE dk_main.player_id = dk_detail.player_id AND dk_main.name = players.player_name GROUP BY dk_detail.player_id) a ON a.player_id = pitcher_stats.player_id SET pitcher_stats.total_value = ((total_score/salary)*10000)
+
+##Select top total_value players from pitcher_stats
+SELECT player_name, sum(total_value)/count(*) FROM `pitcher_stats`, players WHERE players.player_id = pitcher_stats.player_id AND game_date > curdate() - 30 group by pitcher_stats.player_id
+ORDER BY sum(total_value)/count(*)  DESC

@@ -306,7 +306,7 @@ $did_not_play = 0;
 $has_records  = 0;
 $cellSQL      = NULL;
 foreach(($table->find('tr')) as $row) {
-  $sql3 = "INSERT INTO `pitcher_stats`(`player_id`,`game_date`, `opponent`, `win_result`, `score_result`, `innings_pitched`,
+  $sql3 = "INSERT INTO `player_stats`(`player_id`,`game_date`, `opponent`, `win_result`, `score_result`, `innings_pitched`,
           `hits`, `runs`, `earned_runs`, `home_runs`, `walks`, `strikeouts`, `ground_balls`, `fly_balls`, `pitches`,
           `batters_faced`, `game_score`, `added_on`) VALUES ";
   $rowCounter++;
@@ -354,8 +354,8 @@ foreach(($table->find('tr')) as $row) {
         $cellCounter++;
       }
     $cellCounter = 0;
-    //See if this players game has already been recorded in pitcher_stats
-    $sql4 = "SELECT count(*) as p_count FROM pitcher_stats WHERE player_id = '$playerID' AND game_date = '$date'";
+    //See if this players game has already been recorded in player_stats
+    $sql4 = "SELECT count(*) as p_count FROM player_stats WHERE player_id = '$playerID' AND game_date = '$date'";
     if ($date !== 0 && $skipNextRow == 0) {
       $res = $mysqli->query($sql4);
       $res->data_seek(0);
@@ -396,7 +396,7 @@ foreach(($table->find('tr')) as $row) {
     $has_records  = 0;
     $cellSQL      = NULL;
     foreach(($table->find('tr')) as $row) {
-      $sql3 = "INSERT INTO `pitcher_stats` (`player_id`,`game_date`, `opponent`, `win_result`, `score_result`, `at_bat`,
+      $sql3 = "INSERT INTO `player_stats` (`player_id`,`game_date`, `opponent`, `win_result`, `score_result`, `at_bat`,
         `runs`, `hits`, `double_hit`, `triple_hit`, `home_runs`, `rbi`, `walks`, `strikeouts`, `stolen_bases`,
         `caught_stealing`, `base_percent`, `slug_percent`, `added_on`) VALUES ";
       $rowCounter++;
@@ -446,8 +446,8 @@ foreach(($table->find('tr')) as $row) {
             $cellCounter++;
           }
         $cellCounter = 0;
-        //See if this players game has already been recorded in pitcher_stats
-        $sql4 = "SELECT count(*) as p_count FROM pitcher_stats WHERE player_id = '$playerID' AND game_date = '$date'";
+        //See if this players game has already been recorded in player_stats
+        $sql4 = "SELECT count(*) as p_count FROM player_stats WHERE player_id = '$playerID' AND game_date = '$date'";
         if ($date !== 0 && $skipNextRow == 0) {
           $res = $mysqli->query($sql4);
           $res->data_seek(0);
@@ -476,7 +476,7 @@ foreach(($table->find('tr')) as $row) {
     }
 }
 }
-//Input new game stats into pitcher_stats table
+//Input new game stats into player_stats table
 $updateCount++;
 //Send updates while script is running
 $var++;
@@ -490,13 +490,13 @@ $sql5 = "UPDATE players SET `refreshed_on` = curdate() WHERE `player_id` = $play
 $res = $mysqli->query($sql5);
 }
 ////Update the pitchers real total_score
-$sql6 = "UPDATE `pitcher_stats` JOIN players on players.player_id = pitcher_stats.player_id
+$sql6 = "UPDATE `player_stats` JOIN players on players.player_id = player_stats.player_id
          SET `total_score`= ((`innings_pitched`*2.25)+(`strikeouts`*2)+(`win_result`*4)+
                              (`earned_runs`*-2)+(`hits`*-.6)+(`walks`*-.6))
          WHERE players.position like '%P%'";
 $res = $mysqli->query($sql6);
 ////Update the pitchers real total_score
-$sql7 = "UPDATE `pitcher_stats` JOIN players on players.player_id = pitcher_stats.player_id
+$sql7 = "UPDATE `player_stats` JOIN players on players.player_id = player_stats.player_id
          SET `total_score`= (((`hits`-`double_hit`-`triple_hit`)*3)+(`double_hit`*5)+
          (`triple_hit`*8)+(`home_runs`*10)+(`rbi`*2.25)+(`runs`*2.25)+(`walks`*2)+
          (`rbi`*2.25)+(`stolen_bases`*5)) WHERE players.position NOT LIKE '%P%'";
@@ -504,22 +504,22 @@ $res = $mysqli->query($sql7);
 
 ////Update pitching points accumulated against a certain team
 //Higher points equates to an easy team to score hitting points against
-$sql8 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as hitting_strength_against_pitchers, opponent FROM players, pitcher_stats, (SELECT SUM(total_score)/count(*) AS average FROM pitcher_stats) a WHERE players.player_id = pitcher_stats.player_id AND position LIKE '%P%' GROUP BY pitcher_stats.opponent) a
+$sql8 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as hitting_strength_against_pitchers, opponent FROM players, player_stats, (SELECT SUM(total_score)/count(*) AS average FROM player_stats) a WHERE players.player_id = player_stats.player_id AND position LIKE '%P%' GROUP BY player_stats.opponent) a
 ON team.nickname = a.opponent
 SET team.hitting_strength = a.hitting_strength_against_pitchers";
 $mysqli->query($sql8);
 
 ////Update hitting points accumulated against a certain team
 //Higher points equates to an easy team to score pitchting points against
-$sql9 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as pitching_strength_against_hitters, opponent FROM players, pitcher_stats, (SELECT SUM(total_score)/count(*) AS average FROM pitcher_stats) a WHERE players.player_id = pitcher_stats.player_id AND position NOT LIKE '%P%' GROUP BY pitcher_stats.opponent) a
+$sql9 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as pitching_strength_against_hitters, opponent FROM players, player_stats, (SELECT SUM(total_score)/count(*) AS average FROM player_stats) a WHERE players.player_id = player_stats.player_id AND position NOT LIKE '%P%' GROUP BY player_stats.opponent) a
 ON team.nickname = a.opponent
 SET team.pitching_strength = a.pitching_strength_against_hitters";
 $mysqli->query($sql9);
 
-$sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
+$sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
 $mysqli->query($sql10);
 
-$sql11 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.points = a.points";
+$sql11 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.points = a.points";
 $mysqli->query($sql11);
 
 $totalTime = time() - $startTime;

@@ -19,10 +19,6 @@
 	    <![endif]-->
 	<title>Fantasy Baseball Quant</title>
 	<style>
-	img.two {
-    height: auto;
-    width: 60%;
-}
 </style>
 </head>
 <body>
@@ -152,7 +148,7 @@ $mysqli->query($sql4);
 }
 
 ////Update players.value
-$sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
+$sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
 $mysqli->query($sql10);
 ////Update players.salary
 $sql8 = "UPDATE players JOIN (SELECT salary, dk_detail.player_id FROM dk_detail,
@@ -160,10 +156,10 @@ $sql8 = "UPDATE players JOIN (SELECT salary, dk_detail.player_id FROM dk_detail,
 				 WHERE a.player_id = dk_detail.player_id AND a.added_on = dk_detail.added_on) a
 				 ON a.player_id = players.player_id SET players.salary = a.salary";
 $mysqli->query($sql8);
-$sql11 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
+$sql11 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
 $mysqli->query($sql11);
 
-$sql12 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.points = a.points";
+$sql12 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.points = a.points";
 $mysqli->query($sql12);
 ?>
 
@@ -442,9 +438,9 @@ while ($row = $res->fetch_assoc()) {
 
 ////Account for opponents difficulty rating////
 if (strpos($t_position, 'P') == true) {
-$sql6 = "SELECT pitching_strength AS relative_diff, pitcher_stats.opponent FROM team, players, pitcher_stats WHERE players.team = team.team_name AND players.player_id = pitcher_stats.player_id AND players.player_name = '".$t_name."'";
+$sql6 = "SELECT pitching_strength AS relative_diff, player_stats.opponent FROM team, players, player_stats WHERE players.team = team.team_name AND players.player_id = player_stats.player_id AND players.player_name = '".$t_name."'";
 } else {
-$sql6 = "SELECT hitting_strength AS relative_diff, pitcher_stats.opponent FROM team, players, pitcher_stats WHERE players.team = team.team_name AND players.player_id = pitcher_stats.player_id AND players.player_name = '".$t_name."'";
+$sql6 = "SELECT hitting_strength AS relative_diff, player_stats.opponent FROM team, players, player_stats WHERE players.team = team.team_name AND players.player_id = player_stats.player_id AND players.player_name = '".$t_name."'";
 }
 $res = $mysqli->query($sql6);
 $res->data_seek(0);
@@ -612,9 +608,9 @@ $y++;
 		////Grab the opposing teams difficulty for that position
 		//Example: Grab how many points a pitcher averages against the opposing team
 		if (strpos($position, 'P') == true) {
-		$sql6 = "SELECT nickname, pitching_strength AS relative_diff, pitcher_stats.opponent FROM team, players, pitcher_stats WHERE players.team = team.team_name AND players.player_id = pitcher_stats.player_id AND players.player_name = '".$name."'";
+		$sql6 = "SELECT nickname, pitching_strength AS relative_diff, player_stats.opponent FROM team, players, player_stats WHERE players.team = team.team_name AND players.player_id = player_stats.player_id AND players.player_name = '".$name."'";
 	  } else {
-		$sql6 = "SELECT nickname, hitting_strength AS relative_diff, pitcher_stats.opponent FROM team, players, pitcher_stats WHERE players.team = team.team_name AND players.player_id = pitcher_stats.player_id AND players.player_name = '".$name."'";
+		$sql6 = "SELECT nickname, hitting_strength AS relative_diff, player_stats.opponent FROM team, players, player_stats WHERE players.team = team.team_name AND players.player_id = player_stats.player_id AND players.player_name = '".$name."'";
 	  }
 		$res = $mysqli->query($sql6);
 		$res->data_seek(0);

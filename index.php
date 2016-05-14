@@ -21,7 +21,7 @@
 	<style>
 	img.two {
     height: auto;
-    width: 70%;
+    width: 60%;
 }
 </style>
 </head>
@@ -39,7 +39,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9734";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9786";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -87,7 +87,7 @@ array_pop($csvArray);
 ///////////////////////////////////////////////////////////////
 
 ////Part 1 of 3 for the SQL statement
-$sql2 = "INSERT INTO player (`name`, `position`, `team`, `added_on`) VALUES ";
+$sql2 = "INSERT INTO player (`name`,  `dk_name`, `position`, `team`, `added_on`) VALUES ";
 ////Part 2 of 3 for the SQL statment
 $i = 0;
 foreach ($csvArray as $array){
@@ -95,38 +95,44 @@ foreach ($csvArray as $array){
 	$position = $array[0];
 	$team     = str_replace("'","''", $array[5]);
 	if ($i == 0) {
-		$sql2 .= "('".$name."', '".$position."', '".$team."', curdate())";
+		$sql2 .= "('".$name."','".$name."','".$position."', '".$team."', curdate())";
 
 	} else {
-    $sql2 .= ", ('".$name."', '".$position."', '".$team."', curdate())";
+    $sql2 .= ", ('".$name."','".$name."','".$position."', '".$team."', curdate())";
 	}
 	$i = 1;
 }
 ////Part 3 of 3 for the SQL statement
 $sql2 .= " ON DUPLICATE KEY UPDATE `position` = VALUES(position), `team` = VALUES(team), `changed_on` = curdate();";
 
-////EXECUTE SQL statement
-$res = $mysqli->query($sql5);
-$res = $mysqli->query($sql2);
+//Insert new csv
+$mysqli->query($sql2);
+////Grab newly inserted csv for use below
 
 ////Grab the player_id from dk_main and push onto the csvArray
 foreach ($csvArray as $key => &$array){
 	$name = str_replace("'","''", $array[1]);
-	  $sql3 = "SELECT player_id FROM players WHERE player_name = '".$name."'";
+	  $sql3 = "SELECT player_id FROM players WHERE dk_name = '".$name."'";
 		$res = $mysqli->query($sql3);
 		$res->data_seek(0);
 		if ($res !== 0) {
 		  while ($row = $res->fetch_assoc()) {
 		    $array[] = $row['player_id'];
 		  }
-    }
+    } else {
+			echo "<br>".$name;
+		}
 }
 
 ////Insert records into the dk_details table if there is a new CSV
 if ($new_csv == 1) {
 $sql4 = "INSERT INTO dk_detail (`player_id`, `salary`, `points`, `value`, `csv_id`, `added_on`) VALUES ";
 $i = 0;
+
 foreach ($csvArray as $array){
+	if (isset($array[6]) == false) {
+		echo "<br><pre>".$array[0]." ".$array[1]." ".$array[2]." ".$array[3]." ".$array[4]." ".$array[5]."</pre>";
+	}
 	$player_id = str_replace("'","''", $array[6]);
 	$salary    = $array[2];
 	$points    = $array[4];
@@ -143,14 +149,22 @@ foreach ($csvArray as $array){
 	$i = 1;
 }
 $mysqli->query($sql4);
+}
 
 ////Update players.value
 $sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
 $mysqli->query($sql10);
-}
-$sql8 = "UPDATE players JOIN (SELECT salary, player_id, MAX(added_on) FROM dk_detail GROUP BY player_id) a
+////Update players.salary
+$sql8 = "UPDATE players JOIN (SELECT salary, dk_detail.player_id FROM dk_detail,
+				(SELECT max(added_on) AS added_on, player_id FROM dk_detail GROUP BY player_id) a
+				 WHERE a.player_id = dk_detail.player_id AND a.added_on = dk_detail.added_on) a
 				 ON a.player_id = players.player_id SET players.salary = a.salary";
 $mysqli->query($sql8);
+$sql11 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
+$mysqli->query($sql11);
+
+$sql12 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM pitcher_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.points = a.points";
+$mysqli->query($sql12);
 ?>
 
 <!-- Navigation Bar -->
@@ -257,7 +271,7 @@ $mysqli->query($sql8);
 // 				 AND dk_detail.player_id = dk_main.player_id AND dk_detail.points > 0 AND dk_main.probable = '1'";
 
 ////NEW////
-$sqlSelect = "SELECT players.player_id, players.player_name, players.position, players.salary, players.value, players.points
+$sqlSelect = "SELECT players.player_id, players.player_name, players.position, dk_detail.salary, round((players.points/dk_detail.salary)*100000) AS value, players.points
 							FROM players , dk_detail, dk_csv WHERE dk_csv.csv_id = dk_detail.csv_id AND dk_detail.player_id = players.player_id
 							AND dk_csv.active = 1 AND players.points > 0 AND players.probable = '1'";
 
@@ -269,11 +283,22 @@ while ($row = $res->fetch_assoc()) {
 $rec_count = $row['rec_count'];
 }
 ////Initiate variables for use in the loop statment
-$y              = 0;
-$var            = 0;
-$new_player     = 0;
-$no_new_players = 0;
-$step           = 0;
+$y                 = 0;
+$var               = 0;
+$new_player        = 0;
+$no_new_players    = 0;
+$step              = 0;
+$loop              = 0;
+$SP_position       = 0;
+$RP_position       = 0;
+$C_position        = 0;
+$fi_position       = 0;
+$se_position       = 0;
+$th_position       = 0;
+$SS_position       = 0;
+$OF_position       = 0;
+$unfilled_position = NULL;
+
 //                   BEGIN loop                 //
 for ($no_new_players = 0; $no_new_players < 1;) {
 	flush();
@@ -299,16 +324,13 @@ for ($no_new_players = 0; $no_new_players < 1;) {
 			}
 	}
 	$tot_sal = array_sum($allSalary);
-	/////////////////////////////////////////
-
+/////////////////////////////////////////
 
 //Check to see if best team has any players//
 $best_team_id = NULL;
-$order_by      = "value DESC";
 foreach ($best_team as $key4 => $value4) {
 	if (substr($key4, -1) == 'k') {
 		if ($value4 === "0") {
-		  $order_by = "salary ASC";
 	} elseif ($best_team_id === NULL) {
 		$best_team_id = "'".$value4."'";
 	} else {
@@ -320,23 +342,102 @@ foreach ($best_team as $key4 => $value4) {
 if ($best_team_id !== NULL) {
   $best_team_id = "AND players.player_id NOT IN (".$best_team_id.")";
 }
+
+$unfilled_position = NULL;
+$position_count    = 0;
+if ($RP_position != 0 || $SP_position != 0 || $C_position != 0 || $fi_position != 0 || $se_position != 0 || $th_position != 0 || $SS_position != 0 || $OF_position != 0 ) {
+	$pitcher_position = $RP_position + $SP_position;
+	if ($pitcher_position > 1) {
+		if ($unfilled_position === NULL) {
+			$unfilled_position = "'SP','RP'";
+			$position_count++;
+		} else {
+			$unfilled_position .= " ,'SP','RP'";
+			$position_count++;
+		}
+	}
+	if ($C_position > 0) {
+		if ($unfilled_position === NULL) {
+			$unfilled_position = "'C'";
+			$position_count++;
+		} else {
+			$unfilled_position .= " ,'C'";
+			$position_count++;
+		}
+	}
+	if ($fi_position > 0) {
+		if ($unfilled_position === NULL) {
+			$unfilled_position = "'1B'";
+			$position_count++;
+		} else {
+			$unfilled_position .= " ,'1B'";
+			$position_count++;
+		}
+	}
+	if ($se_position > 0) {
+		if ($unfilled_position === NULL) {
+			$unfilled_position = "'2B'";
+			$position_count++;
+		} else {
+			$unfilled_position .= " ,'2B'";
+			$position_count++;
+		}
+	}
+	if ($th_position > 0) {
+		if ($unfilled_position === NULL) {
+			$unfilled_position = "'3B'";
+			$position_count++;
+		} else {
+			$unfilled_position .= " ,'3B'";
+			$position_count++;
+		}
+	}
+	if ($SS_position > 0) {
+		if ($unfilled_position === NULL) {
+			$unfilled_position = "'SS'";
+			$position_count++;
+		} else {
+			$unfilled_position .= " ,'SS'";
+			$position_count++;
+		}
+	}
+	if ($OF_position > 2) {
+		if ($unfilled_position === NULL) {
+			$unfilled_position = "'OF'";
+			$position_count++;
+		} else {
+			$unfilled_position .= " ,'OF'";
+			$position_count++;
+		}
+	}
+	$unfilled_position = "AND players.position NOT IN (".$unfilled_position.")";
+}
+
+////Check to see if any array values are 0
+if ($position_count < 6) {
+	$orderby = "salary ASC";
+} else {
+	$orderby = "value DESC";
+	$unfilled_position = NULL;
+}
+
 ////Build final SQL statement////
-$sql0 = "$sqlSelect $best_team_id ORDER BY $order_by LIMIT $var,1";
+$sql0 = "$sqlSelect $best_team_id $unfilled_position ORDER BY $orderby LIMIT $var,1";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
-	$t_salary = '';
+	$t_salary     = '';
 	$t_name       = NULL;
 	$t_value      = NULL;
 	$t_salkey     = NULL;
 	$t_position   = NULL;
 	$t_points     = NULL;
-	$t_points   = $row['points'];
-	$t_name     = $row['player_name'];
-	$t_position = $row['position'];
-	$t_salkey   = floatval($row['player_id']);
-	$t_salary   = floatval($row['salary']);
-	$t_value    = $row['value'];
+	$t_points     = $row['points'];
+	$t_name       = $row['player_name'];
+	$t_position   = trim($row['position']);
+	$t_salkey     = floatval($row['player_id']);
+	$t_salary     = floatval($row['salary']);
+	$t_value      = $row['value'];
 }
 
 ////Account for opponents difficulty rating////
@@ -385,7 +486,6 @@ $t_value    = $t_points/$t_salary*100000;
 			foreach($best_team as $key => $value){
 				//Grab Points from all best_team Pitchers
     		if (substr($key, 0, 2) == $newValue && substr($key, -1) == "p"){
-
          	$p_points[$key] = $value;
     		}
 				//Grab Salary from all best_team pitchers
@@ -398,6 +498,16 @@ $t_value    = $t_points/$t_salary*100000;
 		foreach($p_points as $key => $value){
 			if ($tot_sal + $t_salary - array_values($p_salary)[$step2] < $sal_cap && isset($p_points) && $t_points > array_values($p_points)[$step2]) {
 				$p_key = substr($key, 0, 3);
+				if (isset(${$t_position."_position"})) {
+				${$t_position."_position"}++;
+			} elseif ($t_position == "1B") {
+				$fi_position++;
+			} elseif ($t_position == "2B") {
+				$se_position++;
+			} elseif ($t_position == "3B") {
+				$th_position++;
+			} else {
+			}
 				$new_player = 1;
 				$var        = -1;
 				if ($best_team[$p_key."_n"] == 0) {
@@ -416,6 +526,7 @@ $t_value    = $t_points/$t_salary*100000;
 
 // if variable is larger or equal to record count, reset variable and set loop counter//
 if ($var >= $rec_count) {
+	$loop++;
 	if ($new_player == 0) {
 		$no_new_players = 1;
 	}

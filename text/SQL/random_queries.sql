@@ -8,3 +8,6 @@ SELECT name, points, dk_main.player_id,  (sum(points) / count(*)) AS average_poi
 
 ## SELECT total points per team FROM dk_detail
 SELECT (a.points/count(*)) AS avg_sum ,count(*) AS player_count, sum(a.points) AS point_sum, a.team FROM (SELECT sum(points) AS points, team FROM dk_detail, dk_main WHERE dk_detail.player_id = dk_main.player_id AND position NOT LIKE '%P%'  GROUP BY dk_main.player_id) a GROUP BY team ORDER BY `avg_sum`  DESC
+
+## Select all players from certain date, and how many points they received
+SELECT pitcher_stats.total_score, players.player_name FROM players, pitcher_stats, probable_player_history WHERE players.player_id = pitcher_stats.player_id AND pitcher_stats.player_id = probable_player_history.player_id AND pitcher_stats.game_date = probable_player_history.game_date AND probable_player_history.game_date = '2016-05-11'

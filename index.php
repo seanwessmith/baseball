@@ -71,7 +71,7 @@ while ($row = $res->fetch_assoc()) {
 }
 /////////////////////////////////////////////
 
-////Download new CSV and Parse into dk_main insert statment////
+////Download new CSV and Parse into players////
 $csvData = file_get_contents($csvLink);
 $lines = explode(PHP_EOL, $csvData);
 $array = array();
@@ -105,7 +105,7 @@ $sql2 .= " ON DUPLICATE KEY UPDATE `position` = VALUES(position), `team` = VALUE
 $mysqli->query($sql2);
 ////Grab newly inserted csv for use below
 
-////Grab the player_id from dk_main and push onto the csvArray
+////Grab the player_id from players and push onto the csvArray
 foreach ($csvArray as $key => &$array){
 	$name = str_replace("'","''", $array[1]);
 	  $sql3 = "SELECT player_id FROM players WHERE dk_name = '".$name."'";
@@ -120,9 +120,9 @@ foreach ($csvArray as $key => &$array){
 		}
 }
 
-////Insert records into the dk_details table if there is a new CSV
+////Insert records into the dk_stats table if there is a new CSV
 if ($new_csv == 1) {
-$sql4 = "INSERT INTO dk_detail (`player_id`, `salary`, `points`, `value`, `csv_id`, `added_on`) VALUES ";
+$sql4 = "INSERT INTO dk_stats (`player_id`, `salary`, `points`, `value`, `csv_id`, `added_on`) VALUES ";
 $i = 0;
 
 foreach ($csvArray as $array){
@@ -151,9 +151,9 @@ $mysqli->query($sql4);
 $sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
 $mysqli->query($sql10);
 ////Update players.salary
-$sql8 = "UPDATE players JOIN (SELECT salary, dk_detail.player_id FROM dk_detail,
-				(SELECT max(added_on) AS added_on, player_id FROM dk_detail GROUP BY player_id) a
-				 WHERE a.player_id = dk_detail.player_id AND a.added_on = dk_detail.added_on) a
+$sql8 = "UPDATE players JOIN (SELECT salary, dk_stats.player_id FROM dk_stats,
+				(SELECT max(added_on) AS added_on, player_id FROM dk_stats GROUP BY player_id) a
+				 WHERE a.player_id = dk_stats.player_id AND a.added_on = dk_stats.added_on) a
 				 ON a.player_id = players.player_id SET players.salary = a.salary";
 $mysqli->query($sql8);
 $sql11 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
@@ -261,14 +261,8 @@ $mysqli->query($sql12);
 ////BEGIN: Build Team Loop - adds players to the team starting with the highest value players////
 
 ////Base SQL statement
-////OLD////
-// $sqlSelect = "SELECT dk_main.player_id, dk_main.name, dk_main.position, dk_detail.salary, dk_detail.points, dk_detail.value
-// 			   FROM dk_main, dk_detail, dk_csv WHERE dk_csv.active = 1 AND dk_csv.csv_id = dk_detail.csv_id
-// 				 AND dk_detail.player_id = dk_main.player_id AND dk_detail.points > 0 AND dk_main.probable = '1'";
-
-////NEW////
-$sqlSelect = "SELECT players.player_id, players.player_name, players.position, dk_detail.salary, round((players.points/dk_detail.salary)*100000) AS value, players.points
-							FROM players , dk_detail, dk_csv WHERE dk_csv.csv_id = dk_detail.csv_id AND dk_detail.player_id = players.player_id
+$sqlSelect = "SELECT players.player_id, players.player_name, players.position, dk_stats.salary, round((players.points/dk_stats.salary)*100000) AS value, players.points
+							FROM players , dk_stats, dk_csv WHERE dk_csv.csv_id = dk_stats.csv_id AND dk_stats.player_id = players.player_id
 							AND dk_csv.active = 1 AND players.points > 0 AND players.probable = '1'";
 
 //Grab record count from base SQL statement
@@ -552,7 +546,7 @@ $y++;
 <table class="table table-hover">
   <tbody>
   <tr>
-  <td><strong>Team</strong></td><td><strong>Position</strong></td><td><strong>Name</strong></td> <td><strong>Salary</strong></td><td><strong>Points</strong></td><td><strong>Opponent</strong></td><td><strong>Difficulty</strong></td>
+  <th>Team</strong></th><th>Position</th><th>Name</th><th>Salary</th><th>Points</th><th>Opponent</th><th>Difficulty</th>
   </tr>
 	<?php
 
@@ -662,12 +656,73 @@ $y++;
 </div>
 </div>
 </form>
-
-<div class="row padme">
-	<div id="box1" class="col-md-8 box center">
-<input class="btn btn-transparent" target="_blank" name="opponent_team" value="Opponent team" onclick="window.open('./php/test2.php')"/>
-		</div>
+<?php
+$sql13 = "SELECT count(*) as times_entered, round(sum(entries)/count(*)) as contestants, round( ((sum(placed)/count(*)) / (sum(entries)/count(*)) ) * 100) AS percentage_placed FROM results WHERE entries = 50";
+$res = $mysqli->query($sql13);
+$res->data_seek(0);
+while ($row = $res->fetch_assoc()) {
+$times_entered     = $row['times_entered'];
+$contestants       = $row['contestants'];
+$percentage_placed = $row['percentage_placed'];
+}
+ ?>
+ <form action=''>
+ <div class="row padme" id="team">
+   <div class="col-md-6 box center">
+		 <table class="table table-hover">
+		   <tbody>
+				 <tr>
+					 <th></th>
+		      <th>Historical Results</th>
+					<th></th>
+				 </tr>
+			 </tr>
+			 <th>Entries</th><th>Avg. Contestants</th><th>Avg. Placed</th>
+		 </tr>
+				 <tr>
+					 <?php
+					 $sql13 = "SELECT count(*) as times_entered, round(sum(entries)/count(*)) as contestants, round( ((sum(placed)/count(*)) / (sum(entries)/count(*)) ) * 100) AS percentage_placed FROM results WHERE entries = 50";
+					 $res = $mysqli->query($sql13);
+					 $res->data_seek(0);
+					 while ($row = $res->fetch_assoc()) {
+					 $times_entered     = $row['times_entered'];
+					 $contestants       = $row['contestants'];
+					 $percentage_placed = $row['percentage_placed'];
+					 }
+					  ?>
+				 <td><?php echo $times_entered; ?></td><td><?php echo $contestants; ?></td><td><?php echo $percentage_placed; ?></td>
+			   </tr>
+				 <tr>
+					 <?php
+					 $sql13 = "SELECT count(*) as times_entered, round(sum(entries)/count(*)) as contestants, round( ((sum(placed)/count(*)) / (sum(entries)/count(*)) ) * 100) AS percentage_placed FROM results WHERE entries = 100";
+					 $res = $mysqli->query($sql13);
+					 $res->data_seek(0);
+					 while ($row = $res->fetch_assoc()) {
+					 $times_entered     = $row['times_entered'];
+					 $contestants       = $row['contestants'];
+					 $percentage_placed = $row['percentage_placed'];
+					 }
+					  ?>
+				 <td><?php echo $times_entered; ?></td><td><?php echo $contestants; ?></td><td><?php echo $percentage_placed; ?></td>
+			   </tr>
+				 <tr>
+					 <?php
+					 $sql13 = "SELECT count(*) as times_entered, round(sum(entries)/count(*)) as contestants, round( ((sum(placed)/count(*)) / (sum(entries)/count(*)) ) * 100) AS percentage_placed FROM results WHERE entries > 100";
+					 $res = $mysqli->query($sql13);
+					 $res->data_seek(0);
+					 while ($row = $res->fetch_assoc()) {
+					 $times_entered     = $row['times_entered'];
+					 $contestants       = $row['contestants'];
+					 $percentage_placed = $row['percentage_placed'];
+					 }
+					  ?>
+				 <td><?php echo $times_entered; ?></td><td><?php echo $contestants; ?></td><td><?php echo $percentage_placed; ?></td>
+			   </tr>
+		</tbody>
+		</table>
+	</div>
 </div>
+<!-- <input class="btn btn-transparent" target="_blank" name="opponent_team" value="Opponent team" onclick="window.open('./php/test2.php')"/> -->
 
 <?php
 ////Functions/////

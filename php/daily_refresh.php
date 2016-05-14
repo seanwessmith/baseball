@@ -122,6 +122,63 @@ foreach($big_table as $table) {
     ////END the teams opponents////
 		send_message($startTime, "DONE", "Updated all teams and opponents for the day. ", '100%');
 
+    ////Refresh the results table////
+    //Grab latest draftkings results csv from the downloads folder//
+    $csvLink = "/Users/sean/Downloads/draftkings-contest-entry-history.csv";
+    ///////////////////////////////////////////////
+
+    $viewName   = NULL;
+    $csv_link   = NULL;
+    $oldCSVLink = NULL;
+    $new_csv    = 0;
+    $csvData    = NULL;
+    $lines      = NULL;
+    $csvArray   = array();
+
+    ////Download new CSV and Parse into players////
+    $csvData = file_get_contents($csvLink);
+    $lines = explode(PHP_EOL, $csvData);
+    $array = array();
+    foreach ($lines as $line) {
+        $csvArray[] = str_getcsv($line);
+    }
+    unset($csvArray[0]);
+    array_pop($csvArray);
+
+    $sql2 = "INSERT INTO `results`(`entry_type`, `entry_date`, `placed`, `entries`, `points`, `places_paid`) VALUES ";
+    $i = 0;
+    foreach ($csvArray as $array){
+      if ($array[0] == 'MLB') {
+    	$entry_type  = str_replace("'","''", $array[1]);
+    	$entry_date  = str_replace("'","''", $array[2]);
+    	$placed      = str_replace("'","''", $array[3]);
+      $entries     = str_replace("'","''", $array[7]);
+      $points      = str_replace("'","''", $array[4]);
+      $places_paid = str_replace("'","''", $array[10]);
+      $sql3 = "SELECT count(*) as rec_count FROM results WHERE entry_type = ".$entry_type." AND entry_date = ".$entry_date." AND placed = ";
+    	if ($i == 0) {
+    		$sql2 .= "('".$entry_type."','".$entry_date."','".$placed."', '".$entries."', '".$points."', '".$places_paid."')";
+
+    	} else {
+        $sql2 .= ", ('".$entry_type."','".$entry_date."','".$placed."', '".$entries."', '".$points."', '".$places_paid."')";
+    	}
+    	$i++;
+    }
+    //PHP string can only handle < 100 records, this inserts into SQL in steps
+    if ($i == 80) {
+      $sql2 .= " ON DUPLICATE KEY UPDATE `changed_on` = curdate();";
+      $mysqli->query($sql2);
+      $sql2 = "INSERT INTO `results`(`entry_type`, `entry_date`, `placed`, `entries`, `points`, `places_paid`) VALUES ";
+      $i = 0;
+    }
+    }
+    $sql2 .= " ON DUPLICATE KEY UPDATE `changed_on` = curdate();";
+    $mysqli->query($sql2);
+    $sql2 = "INSERT INTO `results`(`entry_type`, `entry_date`, `placed`, `entries`, `points`, `places_paid`) VALUES ";
+
+    send_message($startTime, "DONE", "Updated results table. ", '100%');
+    ///////////////////////////////////////////////////
+
 ////INPUT: SELECT statement that selects players needing updating////
 $sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY player_id DESC";
 /////////////////////////////////////////////////////////////////////

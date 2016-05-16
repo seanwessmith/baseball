@@ -513,7 +513,6 @@ foreach(($table->find('tr')) as $row) {
           }
           if ($pCount == 0) {
             $sql3 .= $cellSQL;
-            $not_in_db = 1;
             $cellSQL = NULL;
           }
         }
@@ -523,7 +522,8 @@ foreach(($table->find('tr')) as $row) {
         } else {
           $skipNextRow = 0;
         }
-        if ($not_in_db == 1 && $did_not_play == 0 && $has_records == 1) {
+        if ($did_not_play == 0 && $has_records == 1) {
+          $sql3 .= "ON DUPLICATE KEY UPDATE player_id = '".$playerID."', changed_on = curdate()";
           $res = $mysqli->query($sql3);
           $newRecords++;
         }

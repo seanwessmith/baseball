@@ -35,7 +35,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9786";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9796";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -338,11 +338,8 @@ $position_count    = 0;
 if ($RP_position != 0 || $SP_position != 0 || $C_position != 0 || $fi_position != 0 || $se_position != 0 || $th_position != 0 || $SS_position != 0 || $OF_position != 0 ) {
 	$pitcher_position = $RP_position + $SP_position;
 	if ($pitcher_position > 1) {
-		if ($unfilled_position === NULL) {
+		if ($best_team['p00_n'] != 0 && $best_team['p01_n'] != 0) {
 			$unfilled_position = "'SP','RP'";
-			$position_count++;
-		} else {
-			$unfilled_position .= " ,'SP','RP'";
 			$position_count++;
 		}
 	}
@@ -391,7 +388,7 @@ if ($RP_position != 0 || $SP_position != 0 || $C_position != 0 || $fi_position !
 			$position_count++;
 		}
 	}
-	if ($OF_position > 2) {
+	if ($best_team['o00_n'] != 0 && $best_team['o01_n'] != 0 && $best_team['o02_n'] != 0) {
 		if ($unfilled_position === NULL) {
 			$unfilled_position = "'OF'";
 			$position_count++;
@@ -404,15 +401,18 @@ if ($RP_position != 0 || $SP_position != 0 || $C_position != 0 || $fi_position !
 }
 
 ////Check to see if any array values are 0
-if ($position_count < 6) {
+if ($best_team['p00_n'] == 0 || $best_team['p01_n'] == 0 || $best_team['c00_n'] == 0 || $best_team['f00_n'] == 0 || $best_team['s00_n'] == 0 || $best_team['t00_n'] == 0 || $best_team['ss0_n'] == 0 ||
+    $best_team['o00_n'] == 0 || $best_team['o01_n'] == 0 || $best_team['o02_n'] == 0) {
 	$orderby = "salary ASC";
 } else {
 	$orderby = "value DESC";
 	$unfilled_position = NULL;
 }
+// echo "<br>Order: ".$orderby." ".$pitcher_position. " ".$best_team['p00_n']." ".$best_team['p01_n'] ;
 
 ////Build final SQL statement////
 $sql0 = "$sqlSelect $best_team_id $unfilled_position ORDER BY $orderby LIMIT $var,1";
+// echo "<br><pre>".$sql0."</pre>";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {

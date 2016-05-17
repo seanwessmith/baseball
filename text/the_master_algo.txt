@@ -15,3 +15,10 @@ The Master Algorithm- Insights
 5. Nearest Neighbor (p. 186)
 
 6. Support Vector Machines (p. 190)
+
+Extras:
+(www.coursera.org/course/machlearning - Pedro Domingos
+
+www.coursera.org/course/ml - Andrew Ng’s (Open AI)
+
+http://work.caltech.edu/telecourse.html - Abu-Mostafa

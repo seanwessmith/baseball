@@ -2,7 +2,7 @@
 SELECT a.* FROM dk_main a LEFT JOIN players b on a.name = b.player_name WHERE b.player_name IS NULL
 
 ## SELECT duplicate pitcher_stats
-SELECT player_id, game_date, count(*) FROM `pitcher_stats` GROUP BY game_date, player_id ORDER BY count(*) DESC
+SELECT player_id, game_date, count(*) FROM `player_stats` GROUP BY game_date, player_id ORDER BY count(*) DESC
 
 
                                     *********DELETION STATEMENTS*********
@@ -11,4 +11,4 @@ SELECT player_id, game_date, count(*) FROM `pitcher_stats` GROUP BY game_date, p
 DELETE players.* from players left join (select max(player_name), player_id from players group by player_name) a on a.player_id = players.player_id WHERE a.player_id is NULL
 
 ## Remove duplicate FROM pitcher_stats
-DELETE pitcher_stats.* FROM `pitcher_stats` left join (SELECT max(pitcher_id) AS pitcher_id FROM pitcher_stats GROUP BY game_date, player_id) a ON a.pitcher_id = pitcher_stats.pitcher_id WHERE a.pitcher_id IS NULL
+DELETE player_stats.* FROM `player_stats` left join (SELECT max(game_id) AS game_id FROM player_stats GROUP BY game_date, player_id) a ON a.game_id = player_stats.game_id WHERE a.game_id IS NULL

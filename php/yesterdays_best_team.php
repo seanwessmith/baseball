@@ -3,12 +3,12 @@
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
 	<meta content="width=device-width,initial-scale=1.0,user-scalable=no,minimum-scale=1.0,maximum-scale=1.0" id="viewport" name="viewport">
-	<link rel="stylesheet" type="text/css" href="./css/bootstrap.css">
-	<link rel="stylesheet" type="text/css" href="./css/wynd.css">
-	<script src="./js/jquery-1.11.3.min.js"></script>
-	<script src="./js/migrate.js"></script>
-	<script src="./js/bootstrap.min.js"></script>
-	<script src="./js/main.js"></script>
+	<link rel="stylesheet" type="text/css" href="../css/bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="../css/wynd.css">
+	<script src="../js/jquery-1.11.3.min.js"></script>
+	<script src="../js/migrate.js"></script>
+	<script src="../js/bootstrap.min.js"></script>
+	<script src="../js/main.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
@@ -32,216 +32,7 @@ $mysqli = new mysqli("localhost", "root", "root", "dkings");
 if ($mysqli->connect_errno) {
     echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
 }
-//// END SQL CONNECTION  ////
 
-//Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9810";
-///////////////////////////////////////////////
-
-$viewName   = NULL;
-$csv_link   = NULL;
-$oldCSVLink = NULL;
-$new_csv    = 0;
-$sql0 = "SELECT url FROM dk_csv WHERE url = '$csvLink'";
-$res = $mysqli->query($sql0);
-$res->data_seek(0);
-if ($res !== 0) {
-  while ($row = $res->fetch_assoc()) {
-	  $oldCSVLink = $row['url'];
-  }
-	$sql0 = "UPDATE dk_csv SET active = '0'";
-	$res = $mysqli->query($sql0);
-}
-
-////Add csv url to the dk_csv table if not there already
-if ($oldCSVLink != $csvLink) {
-		$new_csv = 1;
-  ////Insert csv url into the dk_csv table////
-  $sql1 = "INSERT INTO dk_csv (url, added_on, active) VALUES ('$csvLink', curdate(), '1');";
-  $res = $mysqli->query($sql1);
-} else {
-	////Set csv to active
-	$sql1 = "UPDATE dk_csv SET active = '1' WHERE url = '".$csvLink."'";
-	$res = $mysqli->query($sql1);
-}
-$sql5 = "SELECT csv_id FROM dk_csv WHERE url = '".$csvLink."'";
-$res = $mysqli->query($sql5);
-while ($row = $res->fetch_assoc()) {
-	$csv_id = $row['csv_id'];
-}
-/////////////////////////////////////////////
-
-////Download new CSV and Parse into players////
-$csvData = file_get_contents($csvLink);
-$lines = explode(PHP_EOL, $csvData);
-$array = array();
-foreach ($lines as $line) {
-    $csvArray[] = str_getcsv($line);
-}
-unset($csvArray[0]);
-array_pop($csvArray);
-///////////////////////////////////////////////////////////////
-
-////Part 1 of 3 for the SQL statement
-$sql2 = "INSERT INTO players (`player_name`,  `dk_name`, `position`, `team`, `added_on`) VALUES ";
-////Part 2 of 3 for the SQL statment
-$i = 0;
-foreach ($csvArray as $array){
-	$name     = str_replace("'","''", $array[1]);
-	$position = $array[0];
-	$team     = str_replace("'","''", $array[5]);
-	if ($i == 0) {
-		$sql2 .= "('".$name."','".$name."','".$position."', '".$team."', curdate())";
-
-	} else {
-    $sql2 .= ", ('".$name."','".$name."','".$position."', '".$team."', curdate())";
-	}
-	$i = 1;
-}
-////Part 3 of 3 for the SQL statement
-$sql2 .= " ON DUPLICATE KEY UPDATE `position` = VALUES(position), `team` = VALUES(team), `changed_on` = curdate();";
-
-//Insert new csv
-$mysqli->query($sql2);
-////Grab newly inserted csv for use below
-
-////Grab the player_id from players and push onto the csvArray
-foreach ($csvArray as $key => &$array){
-	$name = str_replace("'","''", $array[1]);
-	  $sql3 = "SELECT player_id FROM players WHERE dk_name = '".$name."'";
-		$res = $mysqli->query($sql3);
-		$res->data_seek(0);
-		if ($res !== 0) {
-		  while ($row = $res->fetch_assoc()) {
-		    $array[] = $row['player_id'];
-		  }
-    } else {
-			echo "<br>".$name;
-		}
-}
-
-////Insert records into the dk_stats table if there is a new CSV
-if ($new_csv == 1) {
-$sql4 = "INSERT INTO dk_stats (`player_id`, `salary`, `points`, `value`, `csv_id`, `added_on`) VALUES ";
-$i = 0;
-
-foreach ($csvArray as $array){
-	if (isset($array[6]) == false) {
-		echo "<br><pre>".$array[0]." ".$array[1]." ".$array[2]." ".$array[3]." ".$array[4]." ".$array[5]."</pre>";
-	}
-	$player_id = str_replace("'","''", $array[6]);
-	$salary    = $array[2];
-	$points    = $array[4];
-	if ($salary != 0 && $points != 0) {
-	$value     = round(($points/$salary)*100000);
-} else {
-	$value = 0;
-}
-	if ($i == 0) {
-		$sql4 .= "('".$player_id."', '".$salary."', '".$points."', '".$value."','".$csv_id."', curdate())";
-	} else {
-    $sql4 .= ", ('".$player_id."', '".$salary."', '".$points."','".$value."','".$csv_id."', curdate())";
-	}
-	$i = 1;
-}
-$mysqli->query($sql4);
-}
-
-////Update players.value
-$sql10 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
-$mysqli->query($sql10);
-////Update players.salary
-$sql8 = "UPDATE players JOIN (SELECT salary, dk_stats.player_id FROM dk_stats,
-				(SELECT max(added_on) AS added_on, player_id FROM dk_stats GROUP BY player_id) a
-				 WHERE a.player_id = dk_stats.player_id AND a.added_on = dk_stats.added_on) a
-				 ON a.player_id = players.player_id SET players.salary = a.salary";
-$mysqli->query($sql8);
-$sql11 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.value = (a.points/players.salary*100000)";
-$mysqli->query($sql11);
-
-$sql12 = "UPDATE players JOIN (SELECT player_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY player_id) a ON players.player_id = a.player_id SET players.points = a.points";
-$mysqli->query($sql12);
-?>
-
-<!-- Navigation Bar -->
-<div class="full bg"></div>
-<div class="full blurbg" id="cliptop"></div>
-<div class="full blurbg" id="mainblur"></div>
-<div id="nav" class="navbar navbar-default navbar-fixed-top">
-  <div class="container constrained">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
-      <a class="navbar-brand">Fantasy Baseball Quant</a> </div>
-    <div class="navbar-collapse collapse">
-      <ul class="nav navbar-nav">
-      </ul>
-      <ul class="nav navbar-nav navbar-right">
-        <li id="homebar" class="baritem active"><a href="#content">Build</a></li>
-        <li id="projbar" class="baritem"><a href="#projects">Mission Control</a></li>
-        <li id="connbar" class="baritem"><a href="#connect">History</a></li>
-      </ul>
-    </div>
-  </div>
-</div>
-<!-- End of Navigation Bar -->
-
-<!-- Header and Salary Cap input field -->
-<div class="container-fluid" id="content">
-<div class="row padme">
-  <div id="box1" class="col-md-6 box center">
-    <h1>Fantasy Baseball Quant</h1>
-		<form class="form-inline" method="POST">
-			<?php
-	      if($_SERVER['REQUEST_METHOD'] == "POST"){
-					echo 'yes';
-		  //Set sal_cap
-			//If the javascript varaible is posted then pass to PHP variable
-			print "<pre>";
-		  print_r($_POST);
-		  print "</pre>";
-
-			if(isset($_POST['sal_cap'])){
-			    $sal_cap = $_POST['sal_cap'];
-					echo 'true';
-			}else{
-				echo 'no';
-				?>
-			<script>
-				//Post id=salary_cap value from textbox
-				///////Grab Salary Cap///////
-					function salCap(){
-					//Grab values from quantity and price textboxes
-					var salcap  = $('#sal_cap').val();
-							//Send calculated subtotal to the subtotal textbox
-					}
-					$.ajax({
-			        type: "POST",
-			        url: "index.php",
-			        data:{ sal_cap: salcap },
-			        success: function(data){
-			            console.log(data);
-			        }
-			    })
-					alert($salcap)
-					</script>
-					<?
-			echo $sal_cap;}
-}
-?>
-    <div class="input-group">
-      <input type="text" id="salary_cap" class="form-control" placeholder="Enter your Salary Cap...">
-      <span class="input-group-btn">
-        <button class="btn btn-default" type="button">Go!</button>
-      </span>
-    </div><!-- /input-group -->
-	</form>
-  </div><!-- /.row -->
-</div>
-</div>
-<!-- End of header and salary cap input field -->
-
-<!-- Grab information from database to build team-->
-	<?php
   //Set hard values, sal_cap and set tot_sal to 0
 	$sal_cap = 50000;
 	$tot_sal = 0;
@@ -261,9 +52,8 @@ $mysqli->query($sql12);
 ////BEGIN: Build Team Loop - adds players to the team starting with the highest value players////
 
 ////Base SQL statement
-$sqlSelect = "SELECT players.player_id, players.player_name, players.position, dk_stats.salary, round((players.points/dk_stats.salary)*100000) AS value, players.points
-							FROM players , dk_stats, dk_csv WHERE dk_csv.csv_id = dk_stats.csv_id AND dk_stats.player_id = players.player_id
-							AND dk_csv.active = 1 AND players.points > 0 AND players.probable = '1'";
+$sqlSelect = "SELECT players.player_id, players.player_name, players.position, players.salary, round((player_stats.total_score/players.salary)*100000) AS value, player_stats.total_score AS points
+FROM players, player_stats WHERE players.points > 0 AND player_stats.player_id = players.player_id AND player_stats.game_date = curdate() - 1";
 
 //Grab record count from base SQL statement
 $sql = "SELECT count(*) AS rec_count FROM ($sqlSelect) a";
@@ -402,7 +192,6 @@ if ($best_team['p00_n'] == "0" || $best_team['p01_n'] == "0" || $best_team['c00_
 
 ////Build final SQL statement////
 $sql0 = "$sqlSelect $best_team_id $unfilled_position ORDER BY $orderby LIMIT $var,1";
-// echo "<br><pre>".$sql0."</pre>";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
@@ -421,6 +210,7 @@ while ($row = $res->fetch_assoc()) {
 }
 
 ////Account for opponents difficulty rating////
+$t_name     = str_replace("'","''", $t_name);
 if (strpos($t_position, 'P') == true) {
 $sql6 = "SELECT pitching_strength AS relative_diff, player_stats.opponent FROM team, players, player_stats WHERE players.team = team.team_name AND players.player_id = player_stats.player_id AND players.player_name = '".$t_name."'";
 } else {
@@ -478,16 +268,6 @@ $t_value    = $t_points/$t_salary*100000;
 		foreach($p_points as $key => $value){
 			if ($tot_sal + $t_salary - array_values($p_salary)[$step2] < $sal_cap && isset($p_points) && $t_points > array_values($p_points)[$step2]) {
 				$p_key = substr($key, 0, 3);
-				if (isset(${$t_position."_position"})) {
-				${$t_position."_position"}++;
-			} elseif ($t_position == "1B") {
-				$fi_position++;
-			} elseif ($t_position == "2B") {
-				$se_position++;
-			} elseif ($t_position == "3B") {
-				$th_position++;
-			} else {
-			}
 				$new_player = 1;
 				$var        = -1;
 				if ($best_team[$p_key."_n"] == 0) {

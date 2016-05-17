@@ -55,8 +55,10 @@ foreach($big_table as $table) {
         $sql1 .= "'".$href."'";
         $sql2 .= "'".$href."', curdate()) ON DUPLICATE KEY UPDATE player_name = '".$href."', game_date = curdate()";
         $probable_count++;
-        $res = $mysqli->query($sql1);
-        $res = $mysqli->query($sql2);
+        $mysqli->query($sql1);
+        $mysqli->query($sql2);
+        $sql9 = "UPDATE `probable_player_history` JOIN players ON probable_player_history.player_name = players.player_name SET probable_player_history.player_id= players.player_id";
+        $mysqli->query($sql9);
     }
   }
   ////Grab non-pitchers
@@ -73,6 +75,8 @@ foreach($big_table as $table) {
 	        $probable_count++;
           $res = $mysqli->query($sql1);
           $res = $mysqli->query($sql2);
+          $sql9 = "UPDATE `probable_player_history` JOIN players ON probable_player_history.player_name = players.player_name SET probable_player_history.player_id= players.player_id";
+          $mysqli->query($sql9);
 	    }
 	  }
 
@@ -583,9 +587,5 @@ $totalTime = time() - $startTime;
 echo " Total Time Taken: ".$totalTime;
 echo " Total Players updated: ".$updateCount;
 echo " Total Players with new records: ".$newRecords;
-echo " PlayerID of players that haven't played in 2016: ".$noTable;
-foreach ($noTablePlayer as $key => $value) {
-  echo $value;
-}
 send_message($startTime,'CLOSE', 'Process complete', '100%');
 ?>

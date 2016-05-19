@@ -5,7 +5,7 @@
 	<title>Test</title>
 </head>
 <body>
-<form action="test.php">
+<form action="button_test.php">
     <input type="text" name="txt" />
     <input type="submit" class="button" name="opponent_team" value="opponent_team" />
     <input type="submit" class="button" name="home_away" value="home_away" />

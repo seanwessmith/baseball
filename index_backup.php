@@ -35,7 +35,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9797";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9803";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -645,32 +645,73 @@ $y++;
 </div>
 </div>
 </form>
-<script>
-function showUser(str) {
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-            xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function() {
-            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                document.getElementById("txtHint").innerHTML = xmlhttp.responseText;
-            }
-        };
-        xmlhttp.open("GET","php/getuser.php?q="+str,true);
-        xmlhttp.send();
-    }
-</script>
-</head>
-<body>
+<?php
+$sql13 = "SELECT count(*) as times_entered, round(sum(entries)/count(*)) as contestants, round( ((sum(placed)/count(*)) / (sum(entries)/count(*)) ) * 100) AS percentage_placed FROM results WHERE entries = 50";
+$res = $mysqli->query($sql13);
+$res->data_seek(0);
+while ($row = $res->fetch_assoc()) {
+$all_fifty_entries   = $row['times_entered'];
+$all_fifty_opponents = $row['contestants'];
+$all_fifty_placed    = $row['percentage_placed'];
+}
+$sql14 = "SELECT count(*) as times_entered, round(sum(entries)/count(*)) as contestants, round( ((sum(placed)/count(*)) / (sum(entries)/count(*)) ) * 100) AS percentage_placed FROM results WHERE entries = 2";
+$res = $mysqli->query($sql13);
+$res->data_seek(0);
+while ($row = $res->fetch_assoc()) {
+$all_two_entries   = $row['times_entered'];
+$all_two_opponents = $row['contestants'];
+$all_two_placed    = $row['percentage_placed'];
+}
+$sql13 = "SELECT count(*) as times_entered, round(sum(entries)/count(*)) as contestants, round( ((sum(placed)/count(*)) / (sum(entries)/count(*)) ) * 100) AS percentage_placed FROM results WHERE entries = 100";
+$res = $mysqli->query($sql13);
+$res->data_seek(0);
+while ($row = $res->fetch_assoc()) {
+$all_hundred_entries   = $row['times_entered'];
+$all_hundred_opponents = $row['contestants'];
+$all_hundred_placed    = $row['percentage_placed'];
+}
+ ?>
 
-	<div class="row padme" id="team">
-	  <div class="col-md-8 box center" id="projects">
-					<select name="users" onchange="showUser(this.value)">
-					  <option value="">Time Period:</option>
-					  <option value="1">Yesterday</option>
-					  <option value="7">Week</option>
-					  <option value="30">Month</option>
-					  </select>
-<br>
-<div id="txtHint"><b>Person info will be listed here...</b></div>
+
+<script>
+$( document ).ready(function() {
+	$('#entries').text('<?php echo $all_two_entries; ?>');
+ $('#opponents').text('<?php echo $all_two_opponents; ?>');
+ $('#placed').text('<?php echo $all_two_placed; ?>');
+});
+$('.head').click(function(){
+ var $this = $(this);
+ $this.toggleClass('head');
+ if($this.hasClass('head')){
+	 $this.text('Head to Head');
+	 $('#entries').text('<?php echo $all_two_entries; ?>');
+	 $('#opponents').text('<?php echo $all_two_opponents; ?>');
+	 $('#placed').text('<?php echo $all_two_placed; ?>');
+ }
+});
+</script>
+
+ <form action=''>
+ <div class="row padme" id="team">
+   <div class="col-md-6 box center">
+		 <table class="table table-hover">
+		   <tbody>
+				 <tr>
+					 <th></th>
+		      <th>Historical Results<button class="head">Head to Head</button></th>
+					<th></th>
+				 </tr>
+			 </tr>
+			 <th>Entries</th><th>Avg. Contestants</th><th>Avg. Placed</th>
+		 </tr>
+				 <tr>
+				 <td id="entries"></td><td id="opponents"></td><td id="placed"></td>
+			   </tr>
+		</tbody>
+		</table>
+	</div>
+</div>
+<input class="btn btn-transparent" target="_blank" name="opponent_team" value="Opponent team" onclick=""/>
 
 <?php
 ////Functions/////

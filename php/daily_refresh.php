@@ -82,7 +82,7 @@ foreach($big_table as $table) {
 
     ////END update the probable players////
 		send_message($startTime, "DONE", "Updated ".$probable_count." probable players for the day. ", '100%');
-
+    flush();
     ////Update the team's opponents for the day////
     $teams = array();
     $sql0  = "SELECT * FROM team";
@@ -125,7 +125,7 @@ foreach($big_table as $table) {
 
     ////END the teams opponents////
 		send_message($startTime, "DONE", "Updated all teams and opponents for the day. ", '100%');
-
+    flush();
     ////Refresh the results table////
     //Grab latest draftkings results csv from the downloads folder//
     $csvLink = "/Users/sean/Downloads/draftkings-contest-entry-history.csv";
@@ -181,6 +181,7 @@ foreach($big_table as $table) {
     $sql2 = "INSERT INTO `results`(`entry_type`, `entry_date`, `placed`, `entries`, `points`, `places_paid`) VALUES ";
 
     send_message($startTime, "DONE", "Updated results table. ", '100%');
+    flush();
     ///////////////////////////////////////////////////
 
 ////INPUT: SELECT statement that selects players needing updating////

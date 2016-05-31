@@ -1,6 +1,0 @@
-1. Free $2K LYFT Baseball Contest - Changed the players according to - https://playbook.draftkings.com/mlb/mlb-top-10-pitchers-may-10th
-CSV - https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9719
-
-2. MLB DAILY FREE CONTEST [PLAY FOR FREE, WIN PRIZES] (LATE) -
-Changed players according to https://playbook.draftkings.com/mlb/mlb-targets-may-10th and pitcher_stats.total_score
-CSV - https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9745

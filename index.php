@@ -35,7 +35,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9797";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9749";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -147,20 +147,19 @@ foreach ($csvArray as $array){
 $mysqli->query($sql4);
 }
 
-////Update players.value
-$sql10 = "UPDATE players JOIN (SELECT espn_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY espn_id) a ON players.espn_id = a.espn_id SET players.value = (a.points/players.salary*100000)";
-$mysqli->query($sql10);
 ////Update players.salary
-$sql8 = "UPDATE players JOIN (SELECT salary, dk_stats.espn_id FROM dk_stats,
-				(SELECT max(added_on) AS added_on, espn_id FROM dk_stats GROUP BY espn_id) a
-				 WHERE a.espn_id = dk_stats.espn_id AND a.added_on = dk_stats.added_on) a
-				 ON a.espn_id = players.espn_id SET players.salary = a.salary";
+$sql8 = "UPDATE players JOIN (SELECT salary, dk_stats.espn_id FROM dk_stats, (SELECT max(added_on) AS added_on, espn_id FROM dk_stats GROUP BY espn_id) a WHERE a.espn_id = dk_stats.espn_id AND a.added_on = dk_stats.added_on) a ON a.espn_id = players.espn_id SET players.salary = a.salary";
 $mysqli->query($sql8);
+////Update players.points
+$sql12 = "UPDATE players JOIN (SELECT a.espn_id, (a.points + b.one_week_score)/2 AS calc_score FROM (SELECT espn_id, round(sum(total_score)/count(*))
+AS points FROM player_stats GROUP BY espn_id) a, (SELECT espn_id, round(SUM(total_score)/count(*), 2) AS one_week_score FROM player_stats WHERE game_date >= curdate() - 7 GROUP BY espn_id) b WHERE a.espn_id = b.espn_id) c ON players.espn_id = c.espn_id SET players.points = c.calc_score";
+//ORIGINAL//
+// $sql12 = "UPDATE players JOIN (SELECT espn_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY espn_id) a ON players.espn_id = a.espn_id SET players.points = a.points";
+////////////
+$mysqli->query($sql12);
+////Update players.value
 $sql11 = "UPDATE players JOIN (SELECT espn_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY espn_id) a ON players.espn_id = a.espn_id SET players.value = (a.points/players.salary*100000)";
 $mysqli->query($sql11);
-
-$sql12 = "UPDATE players JOIN (SELECT espn_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY espn_id) a ON players.espn_id = a.espn_id SET players.points = a.points";
-$mysqli->query($sql12);
 ?>
 
 <!-- Navigation Bar -->

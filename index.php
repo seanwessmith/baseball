@@ -35,7 +35,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9749";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9937";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -45,8 +45,9 @@ $new_csv    = 0;
 $sql0 = "SELECT url FROM dk_csv WHERE url = '$csvLink'";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
-if ($res !== 0) {
+if ($res !== NULL) {
   while ($row = $res->fetch_assoc()) {
+		echo "yes";
 	  $oldCSVLink = $row['url'];
   }
 	$sql0 = "UPDATE dk_csv SET active = '0'";
@@ -151,10 +152,10 @@ $mysqli->query($sql4);
 $sql8 = "UPDATE players JOIN (SELECT salary, dk_stats.espn_id FROM dk_stats, (SELECT max(added_on) AS added_on, espn_id FROM dk_stats GROUP BY espn_id) a WHERE a.espn_id = dk_stats.espn_id AND a.added_on = dk_stats.added_on) a ON a.espn_id = players.espn_id SET players.salary = a.salary";
 $mysqli->query($sql8);
 ////Update players.points
-$sql12 = "UPDATE players JOIN (SELECT a.espn_id, (a.points + b.one_week_score)/2 AS calc_score FROM (SELECT espn_id, round(sum(total_score)/count(*))
-AS points FROM player_stats GROUP BY espn_id) a, (SELECT espn_id, round(SUM(total_score)/count(*), 2) AS one_week_score FROM player_stats WHERE game_date >= curdate() - 7 GROUP BY espn_id) b WHERE a.espn_id = b.espn_id) c ON players.espn_id = c.espn_id SET players.points = c.calc_score";
+// $sql12 = "UPDATE players JOIN (SELECT a.espn_id, (a.points + b.one_week_score)/2 AS calc_score FROM (SELECT espn_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY espn_id) a, (SELECT espn_id, round(SUM(total_score)/count(*), 2) AS one_week_score FROM player_stats WHERE game_date >= curdate() - 7
+//           GROUP BY espn_id) b WHERE a.espn_id = b.espn_id) c ON players.espn_id = c.espn_id SET players.points = c.calc_score";
 //ORIGINAL//
-// $sql12 = "UPDATE players JOIN (SELECT espn_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY espn_id) a ON players.espn_id = a.espn_id SET players.points = a.points";
+$sql12 = "UPDATE players JOIN (SELECT espn_id, round(sum(total_score)/count(*)) AS points FROM player_stats GROUP BY espn_id) a ON players.espn_id = a.espn_id SET players.points = a.points";
 ////////////
 $mysqli->query($sql12);
 ////Update players.value
@@ -242,8 +243,9 @@ $mysqli->query($sql11);
 <!-- Grab information from database to build team-->
 	<?php
   //Set hard values, sal_cap and set tot_sal to 0
-	$sal_cap = 50000;
-	$tot_sal = 0;
+	$sal_cap   = 50000;
+	$tot_sal   = 0;
+	$minPoints = 0;
 	//Create a best team array
 	$best_team = array("p00_n"=>"0","p00_s"=>"0","p00_v"=>"0","p00_k"=>"0","p00_p"=>"0","p00_t"=>"0",
 										 "p01_n"=>"0","p01_s"=>"0","p01_v"=>"0","p01_k"=>"0","p01_p"=>"0","p01_t"=>"0",
@@ -262,7 +264,7 @@ $mysqli->query($sql11);
 ////Base SQL statement
 $sqlSelect = "SELECT players.espn_id, players.player_name, players.position, dk_stats.salary, round((players.points/dk_stats.salary)*100000) AS value, players.points
 							FROM players , dk_stats, dk_csv WHERE dk_csv.csv_id = dk_stats.csv_id AND dk_stats.espn_id = players.espn_id
-							AND dk_csv.active = 1 AND players.points > 0 AND players.probable = '1'";
+							AND dk_csv.active = 1 AND players.probable = '1'";
 
 //Grab record count from base SQL statement
 $sql = "SELECT count(*) AS rec_count FROM ($sqlSelect) a";
@@ -341,53 +343,53 @@ foreach($best_team as $key => $value){
 }
   if ($unfilled == 1) {
 		if ($best_team['p00_n'] != "0" && $best_team['p01_n'] != "0") {
-			$unfilled_position = "'SP','RP'";
+			$unfilled_position = "SP|RP";
 		}
 	if ($best_team['c00_n'] != "0") {
 		if ($unfilled_position === NULL) {
-			$unfilled_position = "'C'";
+			$unfilled_position = "C";
 		} else {
-			$unfilled_position .= " ,'C'";
+			$unfilled_position .= "|C";
 		}
 	}
 	if ($best_team['f00_n'] != "0") {
 		if ($unfilled_position === NULL) {
-			$unfilled_position = "'1B'";
+			$unfilled_position = "1B";
 		} else {
-			$unfilled_position .= " ,'1B'";
+			$unfilled_position .= "|1B";
 		}
 	}
 	if ($best_team['s00_n'] != "0") {
 		if ($unfilled_position === NULL) {
-			$unfilled_position = "'2B'";
+			$unfilled_position = "2B";
 		} else {
-			$unfilled_position .= " ,'2B'";
+			$unfilled_position .= "|2B";
 		}
 	}
 	if ($best_team['t00_n'] != "0") {
 		if ($unfilled_position === NULL) {
-			$unfilled_position = "'3B'";
+			$unfilled_position = "3B";
 		} else {
-			$unfilled_position .= " ,'3B'";
+			$unfilled_position .= "|3B";
 		}
 	}
 	if ($best_team['ss0_n'] != "0") {
 		if ($unfilled_position === NULL) {
-			$unfilled_position = "'SS'";
+			$unfilled_position = "SS";
 		} else {
-			$unfilled_position .= " ,'SS'";
+			$unfilled_position .= "|SS";
 		}
 	}
 	if ($best_team['o00_n'] != "0" && $best_team['o01_n'] != "0" && $best_team['o02_n'] != "0") {
 		if ($unfilled_position === NULL) {
-			$unfilled_position = "'OF'";
+			$unfilled_position = "OF";
 		} else {
-			$unfilled_position .= " ,'OF'";
+			$unfilled_position .= "|OF";
 		}
 	}
 }
 if ($unfilled_position != NULL) {
-$unfilled_position = "AND players.position NOT IN (".$unfilled_position.")";
+$unfilled_position = "AND players.position NOT REGEXP '".$unfilled_position."'";
 }
 
 ////Check to see if any array values are 0
@@ -398,9 +400,10 @@ if ($best_team['p00_n'] == "0" || $best_team['p01_n'] == "0" || $best_team['c00_
 	$orderby = "value DESC";
 	$unfilled_position = NULL;
 }
+$minPoints = "AND players.points > ".$minPoints;
 
 ////Build final SQL statement////
-$sql0 = "$sqlSelect $best_team_id $unfilled_position ORDER BY $orderby LIMIT $var,1";
+$sql0 = "$sqlSelect $best_team_id $unfilled_position $minPoints ORDER BY $orderby LIMIT $var,1";
 $res = $mysqli->query($sql0);
 $res->data_seek(0);
 while ($row = $res->fetch_assoc()) {
@@ -420,14 +423,16 @@ while ($row = $res->fetch_assoc()) {
 
 ////Account for opponents difficulty rating////
 if (strpos($t_position, 'P') == true) {
-$sql6 = "SELECT pitching_strength AS relative_diff, player_stats.opponent FROM team, players, player_stats WHERE players.team_nickname = team.nickname AND players.espn_id = player_stats.espn_id AND players.player_name = '".$t_name."'";
+$sql6 = "SELECT round(SUM(b.points_against)/count(*),2) AS points_against FROM (SELECT opponent FROM team, players WHERE players.team = team.team_name AND players.player_name = '$t_name') a, (SELECT points_against, nickname as team FROM players, team WHERE players.probable = 1
+	       AND position NOT LIKE '%P%' AND players.team = team.team_name) b WHERE a.opponent = b.team";
 } else {
-$sql6 = "SELECT hitting_strength AS relative_diff, player_stats.opponent FROM team, players, player_stats WHERE players.team_nickname = team.nickname AND players.espn_id = player_stats.espn_id AND players.player_name = '".$t_name."'";
+$sql6 = "SELECT round(SUM(b.points_against)/count(*),2) AS points_against FROM (SELECT opponent FROM team, players WHERE players.team = team.team_name AND players.player_name = '$t_name') a, (SELECT points_against, nickname as team FROM players, team WHERE players.probable = 1
+	       AND position LIKE '%P%' AND players.team = team.team_name) b WHERE a.opponent = b.team";
 }
 $res = $mysqli->query($sql6);
 $res->data_seek(0);
 while ($row    = $res->fetch_assoc()) {
-$difficulty    = $row['relative_diff'];
+$difficulty    = $row['points_against'];
 }
 $t_points   = $t_points + $difficulty;
 $t_value    = $t_points/$t_salary*100000;
@@ -456,7 +461,6 @@ $t_value    = $t_points/$t_salary*100000;
 		} else {
 			$newPosition[] = $new_position;
 		}
-
 		////Grabs all player points and salary for the new position////
 		foreach($newPosition as $newValue) {
 			$p_points    = array();
@@ -501,7 +505,6 @@ $t_value    = $t_points/$t_salary*100000;
 				$step2++;
 			}
   	}
-
 // if variable is larger or equal to record count, reset variable and set loop counter//
 if ($var >= $rec_count) {
 	$loop++;
@@ -511,6 +514,14 @@ if ($var >= $rec_count) {
 ///////////////////////////////////////////////////////////////////////////////////////
 	$var = 0;
 }
+//Get the minimum points in the array to use in main query
+$allPoints = array();
+foreach ($best_team as $key => $value) {
+	 if ((substr($key, -2)) == '_p') {
+		 $allPoints[$value]=$value;
+	 }
+}
+$minPoints = min($allPoints);
 $new_player = 0;
 $var++;
 $y++;
@@ -537,15 +548,6 @@ $y++;
   <th>Team</strong></th><th>Position</th><th>Name</th><th>Salary</th><th>Points</th><th>Opponent</th><th>Difficulty</th>
   </tr>
 	<?php
-
-	$sql7 = "SELECT (SUM(pitching_strength)/count(*)) AS avg_pitch_strength, (SUM(hitting_strength)/count(*)) AS avg_hit_strength FROM team";
-	$res = $mysqli->query($sql7);
-	$res->data_seek(0);
-	while ($row    = $res->fetch_assoc()) {
-	$avg_hit_strength    = $row['avg_hit_strength'];
-	$avg_pitch_strength  = ($row['avg_pitch_strength']);
-	}
-
 	$allSalary = array();
 	foreach ($best_team as $key3 => $value3) {
 			if ((substr($key3, -2)) == '_s') {
@@ -555,10 +557,9 @@ $y++;
 	$tot_sal = array_sum($allSalary);
 
 	$totPoints = array();
-	foreach ($best_team as $key => $value) {
-			if ((substr($key, -2)) == '_p') {
-				$totPoints[$key]=$key;
-				$totPoints[$value]=$value;
+	foreach ($best_team as $key5 => $value5) {
+			if ((substr($key5, -2)) == '_p') {
+				$totPoints[$key5]=$value5;
 			}
 	}
 	$totPoints = array_sum($totPoints);
@@ -586,7 +587,6 @@ $y++;
 
 	//each player has 6 attributes, $y waits until all 6 attributes are grabbed to print table
 	if ($position != null && $name != null && $salary != null && $points != null) {
-
 		////Grab the opposing teams difficulty for that position
 		//Example: Grab how many points a pitcher averages against the opposing team
 		if (strpos($position, 'P') == true) {
@@ -670,23 +670,6 @@ function showUser(str) {
 					  </select>
 <br>
 <div id="txtHint"><b>Person info will be listed here...</b></div>
-
-<?php
-////Functions/////
-//Minimum point player from $best_team//
-function minPoint($best_team) {
- //Minimum point player from $best_team//
- $allPoints = array();
- foreach ($best_team as $key => $value) {
-		 if ((substr($key, -2)) == '_p') {
-			 $allPoints[$key]=$key;
-			 $allPoints[$value]=$value;
-		 }
- }
- $minPoints = min($allPoints);
- return $minPoints;
-}
- ?>
 <script>
 //autocomplete function
 $(function() {

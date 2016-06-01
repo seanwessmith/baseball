@@ -103,21 +103,15 @@ foreach($big_table as $table) {
       $found = NULL;
       $nobr = $div->find('nobr');
       if (isset($nobr[0])) {
-        if (strpos($nobr[0], date('F j')) == true) {
+        if (strpos($nobr[0], date('M j')) == true) {
           $found = 1;
         }
       }
       if ($found == 1) {
-
-        ////Grab the games location
-        $list = $div->find('li[class=game-status]');
-        $location = $list[0]->innertext;
-
-        ////Grab the opposing team
         $list2 = $div->find('li[class=team-name]');
         $href = $list2[0]->find('a');
-        $opponent = $href[0]->innertext;
-        $sql1 = "UPDATE team SET opponent = '$opponent' WHERE team_name = '$key'";
+        preg_match('~name/(.*?)/~', $href[0], $opponent);
+        $sql1 = "UPDATE team SET opponent = '".$opponent[1]."' WHERE team.team_name = '$key'";
         $res = $mysqli->query($sql1);
     }
     }
@@ -564,13 +558,32 @@ $sql7 = "UPDATE `player_stats` JOIN players on players.espn_id = player_stats.es
          (`rbi`*2.25)+(`stolen_bases`*5)) WHERE players.position NOT LIKE '%P%'";
 $res = $mysqli->query($sql7);
 
-////Update pitching points accumulated against a certain team
+////Update hitting_strength against a pitcher
+$sql = "UPDATE players JOIN (SELECT a.espn_id, a.player_name, a.average - b.tot_average AS hitting_strength FROM
+
+(SELECT a.espn_id, a.player_name, round(SUM(b.hitting_strength)/count(*),2) AS average FROM
+(SELECT players.espn_id, players.player_name, game_date, team_nickname FROM player_stats, players WHERE players.espn_id = player_stats.espn_id AND players.position LIKE '%P%' AND player_stats.innings_pitched > 0) a,
+(SELECT round(SUM(total_score)/count(*),2) AS hitting_strength, game_date, opponent FROM player_stats, players WHERE player_stats.espn_id = players.espn_id AND players.position NOT LIKE '%P%' GROUP BY opponent, game_date) b WHERE a.team_nickname = b.opponent AND a.game_date = b.game_date GROUP BY a.espn_id) a,
+
+(SELECT round(SUM(b.hitting_strength)/count(*),2) AS tot_average FROM
+(SELECT players.espn_id, players.player_name, game_date, team_nickname FROM player_stats, players WHERE players.espn_id = player_stats.espn_id AND players.position LIKE '%P%' AND player_stats.innings_pitched > 0) a,
+(SELECT round(SUM(total_score)/count(*),2) AS hitting_strength, game_date, opponent FROM player_stats, players WHERE player_stats.espn_id = players.espn_id AND players.position NOT LIKE '%P%' GROUP BY opponent, game_date) b WHERE a.team_nickname = b.opponent AND a.game_date = b.game_date) b) a ON players.espn_id = a.espn_id SET players.points_against = a.hitting_strength";
+$mysqli->query($sql);
+
+////Update pitching_strength against a hitter
+$sql = "UPDATE players JOIN (SELECT a.espn_id, a.player_name, a.average - b.tot_average AS pitching_strength FROM
+(SELECT a.espn_id, a.player_name, round(SUM(b.pitching_strength)/count(*),2) AS average FROM
+(SELECT players.espn_id, players.player_name, game_date, team_nickname FROM player_stats, players WHERE players.espn_id = player_stats.espn_id AND players.position NOT LIKE '%P%' AND player_stats.at_bat > 0) a,
+(SELECT round(SUM(total_score)/count(*),2) AS pitching_strength, game_date, opponent FROM player_stats, players WHERE player_stats.espn_id = players.espn_id AND players.position LIKE '%P%' GROUP BY opponent, game_date) b WHERE a.team_nickname = b.opponent AND a.game_date = b.game_date GROUP BY a.espn_id) a,
+(SELECT round(SUM(b.pitching_strength)/count(*),2) AS tot_average FROM
+(SELECT players.espn_id, players.player_name, game_date, team_nickname FROM player_stats, players WHERE players.espn_id = player_stats.espn_id AND players.position NOT LIKE '%P%' AND player_stats.at_bat > 0) a,
+(SELECT round(SUM(total_score)/count(*),2) AS pitching_strength, game_date, opponent FROM player_stats, players WHERE player_stats.espn_id = players.espn_id AND players.position LIKE '%P%' GROUP BY opponent, game_date) b WHERE a.team_nickname = b.opponent AND a.game_date = b.game_date) b) a ON players.espn_id = a.espn_id SET players.points_against = a.pitching_strength";
+$mysqli->query($sql);
+
 //Higher points equates to an easy team to score hitting points against
 $sql8 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as hitting_strength_against_pitchers, opponent FROM players, player_stats, (SELECT SUM(total_score)/count(*) AS average FROM player_stats) a WHERE players.espn_id = player_stats.espn_id AND position LIKE '%P%' GROUP BY player_stats.opponent) a
-ON team.nickname = a.opponent
-SET team.hitting_strength = a.hitting_strength_against_pitchers";
+ON team.nickname = a.opponent SET team.hitting_strength = a.hitting_strength_against_pitchers";
 $mysqli->query($sql8);
-
 ////Update hitting points accumulated against a certain team
 //Higher points equates to an easy team to score pitchting points against
 $sql9 = "UPDATE team JOIN (SELECT round((sum(total_score))/count(*) - a.average, 2) as pitching_strength_against_hitters, opponent FROM players, player_stats, (SELECT SUM(total_score)/count(*) AS average FROM player_stats) a WHERE players.espn_id = player_stats.espn_id AND position NOT LIKE '%P%' GROUP BY player_stats.opponent) a

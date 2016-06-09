@@ -179,7 +179,7 @@ foreach($big_table as $table) {
     ///////////////////////////////////////////////////
 
 ////INPUT: SELECT statement that selects players needing updating////
-$sqlSelect = "SELECT * FROM players WHERE refreshed_on <> curdate() ORDER BY espn_id DESC";
+$sqlSelect = "SELECT * FROM players WHERE player_name = 'Robinson Cano'";
 /////////////////////////////////////////////////////////////////////
 
 //Grab record count
@@ -452,6 +452,7 @@ foreach(($table->find('tr')) as $row) {
     $has_records  = 0;
     $cellSQL      = NULL;
     foreach(($table->find('tr')) as $row) {
+      $cellSQL = NULL;
       $sql3 = "INSERT INTO `player_stats` (`espn_id`,`game_date`, `opponent`, `win_result`, `score_result`, `at_bat`,
         `runs`, `hits`, `double_hit`, `triple_hit`, `home_runs`, `rbi`, `walks`, `strikeouts`, `stolen_bases`,
         `caught_stealing`, `base_percent`, `slug_percent`, `added_on`) VALUES ";
@@ -512,7 +513,6 @@ foreach(($table->find('tr')) as $row) {
           }
           if ($pCount == 0) {
             $sql3 .= $cellSQL;
-            $cellSQL = NULL;
           }
         }
         //Used to skip the two header rows

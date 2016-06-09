@@ -35,7 +35,7 @@ if ($mysqli->connect_errno) {
 //// END SQL CONNECTION  ////
 
 //Change this when using new draft kings link//
-$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9937";
+$csvLink = "https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId=28&draftGroupId=9999";
 ///////////////////////////////////////////////
 
 $viewName   = NULL;
@@ -47,7 +47,6 @@ $res = $mysqli->query($sql0);
 $res->data_seek(0);
 if ($res !== NULL) {
   while ($row = $res->fetch_assoc()) {
-		echo "yes";
 	  $oldCSVLink = $row['url'];
   }
 	$sql0 = "UPDATE dk_csv SET active = '0'";
@@ -117,7 +116,6 @@ foreach ($csvArray as $key => &$array){
 		    $array[] = $row['espn_id'];
 		  }
     } else {
-			echo "<br>".$name;
 		}
 }
 
@@ -128,7 +126,6 @@ $i = 0;
 
 foreach ($csvArray as $array){
 	if (isset($array[6]) == false) {
-		echo "<br><pre>".$array[0]." ".$array[1]." ".$array[2]." ".$array[3]." ".$array[4]." ".$array[5]."</pre>";
 	}
 	$espn_id = str_replace("'","''", $array[6]);
 	$salary    = $array[2];
@@ -225,7 +222,7 @@ $mysqli->query($sql11);
 					alert($salcap)
 					</script>
 					<?
-			echo $sal_cap;}
+}
 }
 ?>
     <div class="input-group">
@@ -420,7 +417,6 @@ while ($row = $res->fetch_assoc()) {
 	$t_salary     = floatval($row['salary']);
 	$t_value      = $row['value'];
 }
-
 ////Account for opponents difficulty rating////
 if (strpos($t_position, 'P') == true) {
 $sql6 = "SELECT round(SUM(b.points_against)/count(*),2) AS points_against FROM (SELECT opponent FROM team, players WHERE players.team = team.team_name AND players.player_name = '$t_name') a, (SELECT points_against, nickname as team FROM players, team WHERE players.probable = 1
@@ -433,6 +429,12 @@ $res = $mysqli->query($sql6);
 $res->data_seek(0);
 while ($row    = $res->fetch_assoc()) {
 $difficulty    = $row['points_against'];
+}
+if ($difficulty > 3) {
+	$difficulty = 3;
+}
+if ($difficulty < 3) {
+	$difficulty = -3;
 }
 $t_points   = $t_points + $difficulty;
 $t_value    = $t_points/$t_salary*100000;
